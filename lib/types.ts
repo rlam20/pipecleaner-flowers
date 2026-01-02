@@ -1,55 +1,30 @@
-// lib/types.ts
+// Replace the old premade types with these:
 
-export type FlowerType = {
+export type PresetBundle = {
   id: string;
   name: string;
-  base_price: number;
-};
-
-export type ColorOption = {
-  id: string;
-  name: string;
-  price_modifier: number;
-};
-
-export type SelectedFlower = {
-  id: string; // unique ID for this selection (not flower type ID)
-  flower_type_id: string;
-  flower_name: string;
-  color_id: string;
-  color_name: string;
-  price: number; // base_price + color modifier
-};
-
-export type CustomBouquetAddons = {
-  wrapped: boolean; // +$2
-  organization: 'maker' | 'diy'; // radio
-};
-
-export type CustomBouquet = {
-  flowers: SelectedFlower[];
-  addons: CustomBouquetAddons;
-  total_price: number;
-};
-
-export type OrderFormData = {
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  recipient_name?: string;
-  notes?: string;
+  description: string;
+  price: number;
+  image_url: string;
+  flower_composition: {
+    flower_name: string;
+    quantity: number;
+  }[];
+  color_themes: string[]; // e.g., ["Warm sunset", "Cool pastels", "Vibrant mix"]
+  created_at: string;
 };
 
 export type Order = {
   id: string;
   order_number: string;
-  order_type: 'premade' | 'custom';
+  order_type: 'bundle' | 'custom'; // Changed from 'premade'
   customer_name: string;
   customer_phone: string;
   customer_email?: string;
   recipient_name?: string;
   notes?: string;
-  premade_bouquet_id?: string;
+  preset_bundle_id?: string; // Changed from premade_bouquet_id
+  selected_theme?: string; // Which color theme they chose
   custom_bouquet?: CustomBouquet;
   total_price: number;
   status: 'awaiting_payment' | 'paid' | 'in_progress' | 'completed' | 'cancelled';
