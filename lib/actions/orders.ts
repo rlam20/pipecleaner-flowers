@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { sendOrderNotification } from '@/lib/email'
 
 function generateOrderNumber(): string {
   const date = new Date().toISOString().slice(0, 10).replace(/-/g, '')
@@ -79,6 +80,25 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   // TODO: Send email notification (we'll add this later)
-
+try {
+    await sendOrderNotification({
+      order_number,
+      customer_name: input.customer_name,
+      customer_phone: input.customer_phone,
+      customer_email: input.customer_email,
+      recipient_name: input.recipient_name,
+      notes: input.notes,
+      order_type: input.order_type,
+      total_price: input.total_price,
+      bundle_name: input.order_type === 'bundle' ? orderData.preset_bundle_id : undefined,
+      selected_theme: input.selected_theme,
+      custom_bouquet: input.custom_bouquet
+    })
+  } catch (emailError) {
+    console.error('Email notification failed:', emailError)
+    // Don't fail the order if email fails
+  }
   return { success: true, order_number }
+  
 }
+
