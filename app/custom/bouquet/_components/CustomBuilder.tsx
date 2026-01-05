@@ -61,8 +61,7 @@ export default function CustomBuilder({ flowerTypes, colorOptions }: Props) {
     if (!selectedFlowerType) return
 
     const newFlower: SelectedFlower = {
-      id: crypto.randomUUID(),
-      flower_type_id: selectedFlowerType.id,
+id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,      flower_type_id: selectedFlowerType.id,
       flower_name: selectedFlowerType.name,
       color_id: color.id,
       color_name: color.name,

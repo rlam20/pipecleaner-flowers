@@ -4,13 +4,14 @@ import Image from 'next/image'
 import { notFound } from 'next/navigation'
 import BundleOrderForm from './_components/BundleOrderForm'
 
-export default async function BundleDetailPage({ params }: { params: { id: string } }) {
+export default async function BundleDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params
   const supabase = await createClient()
   
   const { data: bundle } = await supabase
     .from('preset_bundles')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (!bundle) {
@@ -20,7 +21,6 @@ export default async function BundleDetailPage({ params }: { params: { id: strin
   return (
     <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
       <div className="container mx-auto px-4 py-12">
-        {/* Header */}
         <div className="mb-8">
           <Link href="/premade" className="text-rose-600 hover:text-rose-700 font-medium mb-4 inline-block">
             ← Back to Bundles
