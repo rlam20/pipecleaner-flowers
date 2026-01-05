@@ -2,12 +2,39 @@
 
 import { useState, useReducer } from 'react'
 import { useRouter } from 'next/navigation'
-import type { FlowerType, ColorOption, SelectedFlower, CustomBouquetAddons } from '@/lib/types'
+
+// Define types inline since they're not exporting from lib/types
+type FlowerType = {
+  id: string
+  name: string
+  base_price: number
+}
+
+type ColorOption = {
+  id: string
+  name: string
+  price_modifier: number
+}
+
+type SelectedFlower = {
+  id: string
+  flower_type_id: string
+  flower_name: string
+  color_id: string
+  color_name: string
+  price: number
+}
+
+type CustomBouquetAddons = {
+  wrapped: boolean
+  organization: 'maker' | 'diy'
+}
 
 type BuilderState = {
   flowers: SelectedFlower[]
   addons: CustomBouquetAddons
 }
+
 
 type BuilderAction =
   | { type: 'ADD_FLOWER'; payload: SelectedFlower }
