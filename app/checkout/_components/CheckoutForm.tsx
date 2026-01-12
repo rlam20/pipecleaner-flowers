@@ -4,6 +4,13 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createOrder } from '@/lib/actions/orders'
+import { FulfillmentMethod, OrderAddons } from '@/lib/types'
+import FulfillmentMethodSelector from './FulfillmentMethodSelector'
+import PickupForm from './PickupForm'
+import DeliveryForm from './DeliveryForm'
+import AddonsSelector from './AddonsSelector'
+import AcknowledgmentCheckboxes from './AcknowledgmentCheckboxes'
+
 type Props = {
   orderData: any
 }
@@ -11,6 +18,8 @@ type Props = {
 export default function CheckoutForm({ orderData }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  
+  // Customer info
   const [formData, setFormData] = useState({
     customer_name: '',
     customer_phone: '',
@@ -19,54 +28,27 @@ export default function CheckoutForm({ orderData }: Props) {
     notes: ''
   })
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault()
-  
-  if (!formData.customer_name || !formData.customer_phone) {
-    alert('Please fill in your name and phone number')
-    return
-  }
+  // Fulfillment method
+  const [fulfillmentMethod, setFulfillmentMethod] = useState<FulfillmentMethod | null>(null)
 
-  setLoading(true)
+  // Pickup details
+  const [pickupName, setPickupName] = useState('')
+  const [pickupDate, setPickupDate] = useState<Date | null>(null)
+  const [pickupLocation, setPickupLocation] = useState('')
+  const [pickupInstructions, setPickupInstructions] = useState('')
 
-  try {
-    // Prepare order input based on type
-    const orderInput: any = {
-      order_type: orderData.type,
-      customer_name: formData.customer_name,
-      customer_phone: formData.customer_phone,
-      customer_email: formData.customer_email || undefined,
-      recipient_name: formData.recipient_name || undefined,
-      notes: formData.notes || undefined,
-      total_price: getTotal()
-    }
+  // Delivery details
+  const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
+  const [deliveryInstructions, setDeliveryInstructions] = useState('')
+  const [onGroundsHousing, setOnGroundsHousing] = useState(false)
 
-    if (orderData.type === 'bundle') {
-      orderInput.preset_bundle_id = orderData.bundleId
-      orderInput.selected_theme = orderData.theme
-    } else {
-      orderInput.custom_bouquet = {
-        flowers: orderData.flowers,
-        addons: orderData.addons || {},
-        total_price: orderData.total_price
-      }
-    }
-
-    const result = await createOrder(orderInput)
-
-    if (!result.success) {
-      alert(result.error || 'Failed to place order')
-      setLoading(false)
-      return
-    }
-
-    router.push(`/confirmation/${result.order_number}`)
-  } catch (error) {
-    console.error('Order failed:', error)
-    alert('Failed to place order. Please try again.')
-    setLoading(false)
-  }
-}
+  // Add-ons
+  const [addons, setAddons] = useState<OrderAddons>({
+    pocky: false,
+    vase: false,
+    wrapped: false
+  })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
@@ -75,16 +57,145 @@ const handleSubmit = async (e: React.FormEvent) => {
     })
   }
 
-  // Calculate total based on order type
-  const getTotal = () => {
+  const handlePickupChange = (field: string, value: any) => {
+    switch (field) {
+      case 'pickupName': setPickupName(value); break
+      case 'pickupDate': setPickupDate(value); break
+      case 'pickupLocation': setPickupLocation(value); break
+      case 'pickupInstructions': setPickupInstructions(value); break
+    }
+  }
+
+  const handleDeliveryChange = (field: string, value: any) => {
+    switch (field) {
+      case 'deliveryAddress': setDeliveryAddress(value); break
+      case 'deliveryDate': setDeliveryDate(value); break
+      case 'deliveryInstructions': setDeliveryInstructions(value); break
+      case 'onGroundsHousing': setOnGroundsHousing(value); break
+    }
+  }
+
+  const handleAddonChange = (field: keyof OrderAddons, value: boolean) => {
+    setAddons({ ...addons, [field]: value })
+  }
+
+  const getSubtotal = () => {
     if (orderData.type === 'bundle') {
       return orderData.price
-    } else if (orderData.type === 'custom') {
-      return orderData.total_price
-    } else if (orderData.type === 'individual') {
+    } else if (orderData.type === 'custom' || orderData.type === 'individual') {
       return orderData.total_price
     }
     return 0
+  }
+
+  const calculateDeliveryFee = () => {
+    if (fulfillmentMethod !== 'delivery') return 0
+    const subtotal = getSubtotal()
+    return subtotal >= 25 ? 0 : 2.99
+  }
+
+  const calculateTotal = () => {
+    let total = getSubtotal()
+    
+    // Add-ons
+    if (addons.pocky) total += 1.50
+    if (addons.vase) total += 2.00
+    if (addons.wrapped) total += 2.00
+    
+    // Delivery fee
+    total += calculateDeliveryFee()
+    
+    return total
+  }
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!formData.customer_name || !formData.customer_phone) {
+      alert('Please fill in your name and phone number')
+      return
+    }
+
+    if (!fulfillmentMethod) {
+      alert('Please select pickup or delivery')
+      return
+    }
+
+    if (fulfillmentMethod === 'pickup') {
+      if (!pickupName || !pickupDate || !pickupLocation) {
+        alert('Please complete all pickup details')
+        return
+      }
+    } else {
+      if (!deliveryAddress || !deliveryDate) {
+        alert('Please complete all delivery details')
+        return
+      }
+    }
+
+    setLoading(true)
+
+    try {
+      const orderInput: any = {
+        order_type: orderData.type,
+        customer_name: formData.customer_name,
+        customer_phone: formData.customer_phone,
+        customer_email: formData.customer_email || undefined,
+        recipient_name: formData.recipient_name || undefined,
+        notes: formData.notes || undefined,
+        
+        fulfillment_method: fulfillmentMethod,
+        fulfillment_date: fulfillmentMethod === 'pickup' 
+          ? pickupDate?.toISOString().split('T')[0]
+          : deliveryDate?.toISOString().split('T')[0],
+        
+        addon_pocky: addons.pocky,
+        addon_vase: addons.vase,
+        
+        delivery_fee: calculateDeliveryFee(),
+        total_price: calculateTotal()
+      }
+
+      // Pickup specific
+      if (fulfillmentMethod === 'pickup') {
+        orderInput.pickup_name = pickupName
+        orderInput.pickup_location = pickupLocation
+        orderInput.pickup_instructions = pickupInstructions || undefined
+      }
+
+      // Delivery specific
+      if (fulfillmentMethod === 'delivery') {
+        orderInput.delivery_address = deliveryAddress
+        orderInput.delivery_instructions = deliveryInstructions || undefined
+        orderInput.on_grounds_housing = onGroundsHousing
+      }
+
+      // Bundle or custom data
+      if (orderData.type === 'bundle') {
+        orderInput.preset_bundle_id = orderData.bundleId
+        orderInput.selected_theme = orderData.theme
+      } else {
+        orderInput.custom_bouquet = {
+          flowers: orderData.flowers,
+          addons: { wrapped: addons.wrapped },
+          total_price: orderData.total_price
+        }
+      }
+
+      const result = await createOrder(orderInput)
+
+      if (!result.success) {
+        alert(result.error || 'Failed to place order')
+        setLoading(false)
+        return
+      }
+
+      router.push(`/confirmation/${result.order_number}`)
+    } catch (error) {
+      console.error('Order failed:', error)
+      alert('Failed to place order. Please try again.')
+      setLoading(false)
+    }
   }
 
   return (
@@ -99,120 +210,112 @@ const handleSubmit = async (e: React.FormEvent) => {
           </h1>
         </div>
 
-        <div className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {/* Left: Form */}
-          <div className="lg:col-span-2">
-            <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow-md p-6 space-y-6">
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Your Information</h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="customer_name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Your Name <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      id="customer_name"
-                      name="customer_name"
-                      required
-                      value={formData.customer_name}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="customer_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                      Phone Number <span className="text-red-500">*</span>
-                    </label>
-                    <input
-                      type="tel"
-                      id="customer_phone"
-                      name="customer_phone"
-                      required
-                      value={formData.customer_phone}
-                      onChange={handleChange}
-                      placeholder="(555) 123-4567"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="customer_email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email (Optional)
-                    </label>
-                    <input
-                      type="email"
-                      id="customer_email"
-                      name="customer_email"
-                      value={formData.customer_email}
-                      onChange={handleChange}
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <h2 className="text-2xl font-semibold mb-4">Delivery Details</h2>
-                
-                <div className="space-y-4">
-                  <div>
-                    <label htmlFor="recipient_name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Recipient Name (Optional)
-                    </label>
-                    <input
-                      type="text"
-                      id="recipient_name"
-                      name="recipient_name"
-                      value={formData.recipient_name}
-                      onChange={handleChange}
-                      placeholder="Leave blank if for yourself"
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-                      Special Instructions (Optional)
-                    </label>
-                    <textarea
-                      id="notes"
-                      name="notes"
-                      rows={4}
-                      value={formData.notes}
-                      onChange={handleChange}
-                      placeholder="Any special requests or delivery instructions..."
-                      className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-rose-50 rounded-lg p-4">
-                <div className="flex items-start gap-3">
-                  <input
-                    type="checkbox"
-                    id="venmo_acknowledgment"
-                    required
-                    className="mt-1 w-5 h-5 text-rose-600 rounded"
-                  />
-                  <label htmlFor="venmo_acknowledgment" className="text-sm text-gray-700">
-                    I understand that payment is required via Venmo before my order will be started. 
-                    I will receive order details and payment instructions after submitting this form.
+          <div className="lg:col-span-2 space-y-8">
+            {/* Customer Info */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <h2 className="text-2xl font-semibold mb-4">Your Information</h2>
+              
+              <div className="space-y-4">
+                <div>
+                  <label htmlFor="customer_name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Full Name <span className="text-red-500">*</span>
                   </label>
+                  <input
+                    type="text"
+                    id="customer_name"
+                    name="customer_name"
+                    required
+                    value={formData.customer_name}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="customer_phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number / Instagram Handle <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    id="customer_phone"
+                    name="customer_phone"
+                    required
+                    value={formData.customer_phone}
+                    onChange={handleChange}
+                    placeholder="(555) 123-4567 or @yourhandle"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="customer_email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email (Optional)
+                  </label>
+                  <input
+                    type="email"
+                    id="customer_email"
+                    name="customer_email"
+                    value={formData.customer_email}
+                    onChange={handleChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                  />
                 </div>
               </div>
+            </div>
 
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full px-8 py-4 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg transition-colors"
-              >
-                {loading ? 'Placing Order...' : 'Place Order'}
-              </button>
-            </form>
+            {/* Fulfillment Method */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <FulfillmentMethodSelector
+                selected={fulfillmentMethod}
+                onSelect={setFulfillmentMethod}
+                subtotal={getSubtotal()}
+              />
+            </div>
+
+            {/* Conditional: Pickup or Delivery Form */}
+            {fulfillmentMethod && (
+              <div className="bg-white rounded-lg shadow-md p-6">
+                {fulfillmentMethod === 'pickup' ? (
+                  <PickupForm
+                    pickupName={pickupName}
+                    pickupDate={pickupDate}
+                    pickupLocation={pickupLocation}
+                    pickupInstructions={pickupInstructions}
+                    onChange={handlePickupChange}
+                    orderType={orderData.type}
+                  />
+                ) : (
+                  <DeliveryForm
+                    deliveryAddress={deliveryAddress}
+                    deliveryDate={deliveryDate}
+                    deliveryInstructions={deliveryInstructions}
+                    onGroundsHousing={onGroundsHousing}
+                    onChange={handleDeliveryChange}
+                    orderType={orderData.type}
+                  />
+                )}
+              </div>
+            )}
+
+            {/* Add-ons */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <AddonsSelector addons={addons} onChange={handleAddonChange} />
+            </div>
+
+            {/* Acknowledgments */}
+            <div className="bg-white rounded-lg shadow-md p-6">
+              <AcknowledgmentCheckboxes />
+            </div>
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full px-8 py-4 bg-rose-600 text-white rounded-lg hover:bg-rose-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-lg transition-colors"
+            >
+              {loading ? 'Placing Order...' : 'Place Order'}
+            </button>
           </div>
 
           {/* Right: Order Summary */}
@@ -225,12 +328,13 @@ const handleSubmit = async (e: React.FormEvent) => {
                   <div className="pb-3 border-b">
                     <div className="font-semibold text-lg">{orderData.bundleName}</div>
                     <div className="text-sm text-gray-600 mt-1">{orderData.theme}</div>
+                    <div className="text-sm text-gray-900 mt-2">${orderData.price.toFixed(2)}</div>
                   </div>
                 </div>
               )}
 
               {orderData.type === 'custom' && (
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-4 pb-4 border-b">
                   <div className="font-medium mb-2">Custom Bouquet:</div>
                   {orderData.flowers.map((flower: any, index: number) => (
                     <div key={index} className="text-sm flex justify-between">
@@ -238,17 +342,11 @@ const handleSubmit = async (e: React.FormEvent) => {
                       <span>${flower.price.toFixed(2)}</span>
                     </div>
                   ))}
-                  {orderData.addons.wrapped && (
-                    <div className="text-sm flex justify-between pt-2 border-t">
-                      <span>Gift wrapping</span>
-                      <span>$2.00</span>
-                    </div>
-                  )}
                 </div>
               )}
 
               {orderData.type === 'individual' && (
-                <div className="space-y-2 mb-4">
+                <div className="space-y-2 mb-4 pb-4 border-b">
                   <div className="font-medium mb-2">Individual Flowers:</div>
                   {orderData.flowers.map((flower: any, index: number) => (
                     <div key={index} className="text-sm flex justify-between">
@@ -259,20 +357,59 @@ const handleSubmit = async (e: React.FormEvent) => {
                 </div>
               )}
 
-              <div className="border-t pt-4 mb-4">
+              {/* Add-ons breakdown */}
+              {(addons.pocky || addons.vase || addons.wrapped) && (
+                <div className="space-y-2 mb-4 pb-4 border-b text-sm">
+                  {addons.pocky && (
+                    <div className="flex justify-between">
+                      <span>Strawberry Pocky</span>
+                      <span>$1.50</span>
+                    </div>
+                  )}
+                  {addons.vase && (
+                    <div className="flex justify-between">
+                      <span>Glass vase</span>
+                      <span>$2.00</span>
+                    </div>
+                  )}
+                  {addons.wrapped && (
+                    <div className="flex justify-between">
+                      <span>Gift wrapping</span>
+                      <span>$2.00</span>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Delivery fee */}
+              {fulfillmentMethod === 'delivery' && (
+                <div className="mb-4 pb-4 border-b text-sm">
+                  <div className="flex justify-between">
+                    <span>Delivery fee</span>
+                    <span className={calculateDeliveryFee() === 0 ? 'text-green-600 font-semibold' : ''}>
+                      {calculateDeliveryFee() === 0 ? 'FREE' : `$${calculateDeliveryFee().toFixed(2)}`}
+                    </span>
+                  </div>
+                  {getSubtotal() >= 25 && calculateDeliveryFee() === 0 && (
+                    <p className="text-xs text-green-600 mt-1">Free delivery for orders $25+</p>
+                  )}
+                </div>
+              )}
+
+              <div className="pt-4 mb-4">
                 <div className="flex justify-between text-2xl font-bold">
                   <span>Total</span>
-                  <span className="text-rose-600">${getTotal().toFixed(2)}</span>
+                  <span className="text-rose-600">${calculateTotal().toFixed(2)}</span>
                 </div>
               </div>
 
               <div className="bg-gray-50 rounded-lg p-4 text-sm text-gray-600">
-                <p className="font-medium mb-2">Payment Information:</p>
-                <p>After placing your order, you'll receive Venmo payment instructions. Your order will begin once payment is confirmed.</p>
+                <p className="font-medium mb-2">What happens next:</p>
+                <p>@fauxlowers.byjz will reach out via Instagram DM to confirm your date/time and send Venmo payment details.</p>
               </div>
             </div>
           </div>
-        </div>
+        </form>
       </div>
     </main>
   )
