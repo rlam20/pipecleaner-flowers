@@ -43,11 +43,10 @@ export default function CheckoutForm({ orderData }: Props) {
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
   const [onGroundsHousing, setOnGroundsHousing] = useState(false)
 
-  // Add-ons
+  // Add-ons (Removed 'wrapped')
   const [addons, setAddons] = useState<OrderAddons>({
     pocky: false,
     vase: false,
-    wrapped: false
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -100,7 +99,7 @@ export default function CheckoutForm({ orderData }: Props) {
     // Add-ons
     if (addons.pocky) total += 1.50
     if (addons.vase) total += 2.00
-    if (addons.wrapped) total += 2.00
+    // Removed wrapping fee calculation
     
     // Delivery fee
     total += calculateDeliveryFee()
@@ -177,7 +176,8 @@ export default function CheckoutForm({ orderData }: Props) {
       } else {
         orderInput.custom_bouquet = {
           flowers: orderData.flowers,
-          addons: { wrapped: addons.wrapped },
+          // Updated to remove 'wrapped' and reflect current addons
+          addons: { pocky: addons.pocky, vase: addons.vase },
           total_price: orderData.total_price
         }
       }
@@ -199,7 +199,7 @@ export default function CheckoutForm({ orderData }: Props) {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+    <main className="min-h-screen bg-stone-50">
       <div className="container mx-auto px-4 py-12">
         <div className="mb-8">
           <Link href="/" className="text-rose-600 hover:text-rose-700 font-medium mb-4 inline-block">
@@ -358,7 +358,7 @@ export default function CheckoutForm({ orderData }: Props) {
               )}
 
               {/* Add-ons breakdown */}
-              {(addons.pocky || addons.vase || addons.wrapped) && (
+              {(addons.pocky || addons.vase) && (
                 <div className="space-y-2 mb-4 pb-4 border-b text-sm">
                   {addons.pocky && (
                     <div className="flex justify-between">
@@ -369,12 +369,6 @@ export default function CheckoutForm({ orderData }: Props) {
                   {addons.vase && (
                     <div className="flex justify-between">
                       <span>Glass vase</span>
-                      <span>$2.00</span>
-                    </div>
-                  )}
-                  {addons.wrapped && (
-                    <div className="flex justify-between">
-                      <span>Gift wrapping</span>
                       <span>$2.00</span>
                     </div>
                   )}

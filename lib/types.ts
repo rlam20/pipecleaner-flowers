@@ -22,8 +22,8 @@ export type SelectedFlower = {
 };
 
 export type CustomBouquetAddons = {
-  wrapped: boolean;
-  organization: 'maker' | 'diy';
+  pocky: boolean; //
+  vase: boolean;  //
 };
 
 export type CustomBouquet = {
@@ -51,7 +51,6 @@ export type DeliveryDetails = {
 export type OrderAddons = {
   pocky: boolean;
   vase: boolean;
-  wrapped: boolean;
 };
 
 export type OrderFormData = {
