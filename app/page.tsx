@@ -10,7 +10,7 @@ export default function Home() {
       >
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-          style={{ backgroundImage: "url('/IMG_5299.jpeg')" }} // Path updated here
+          style={{ backgroundImage: "url('/public/flowers/IMG_5299.jpg')" }} // Path updated here
         />
 <div className="absolute inset-0 bg-purple-950/45 group-hover:bg-purple-950/60 transition-all duration-500" />
  <div className="relative h-full flex flex-col items-center justify-center text-white px-8">
@@ -34,7 +34,7 @@ export default function Home() {
       >
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-          style={{ backgroundImage: "url('/IMG_5324.jpeg')" }} // Assuming your second image is named similarly
+          style={{ backgroundImage: "url('/public/flowers/IMG_5324.jpg')" }} // Assuming your second image is named similarly
         />
         <div className="absolute inset-0 bg-rose-900/40 group-hover:bg-rose-900/60 transition-all duration-500" />
         
