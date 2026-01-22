@@ -19,7 +19,7 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ i
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-100">
       <div className="container mx-auto px-4 py-12">
         <div className="mb-8">
           <Link href="/premade" className="text-rose-600 hover:text-rose-700 font-medium mb-4 inline-block">

@@ -17,7 +17,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ o
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-100">
       <div className="container mx-auto px-4 py-12">
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-lg shadow-md p-8 text-center mb-6">

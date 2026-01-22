@@ -12,7 +12,8 @@ export default function Home() {
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
           style={{ backgroundImage: "url('/IMG_5299.jpeg')" }} // Path updated here
         />
-<div className="absolute inset-0 bg-fuchsia-950/40 group-hover:bg-fuchsia-950/60 transition-all duration-500" />        <div className="relative h-full flex flex-col items-center justify-center text-white px-8">
+<div className="absolute inset-0 bg-purple-950/45 group-hover:bg-purple-950/60 transition-all duration-500" />
+ <div className="relative h-full flex flex-col items-center justify-center text-white px-8">
           <h2 className="text-5xl md:text-6xl font-bold text-center leading-tight transform group-hover:scale-105 transition-transform duration-500">
             Build <br/> Custom <br/> Bouquets
           </h2>

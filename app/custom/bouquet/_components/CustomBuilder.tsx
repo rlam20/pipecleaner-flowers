@@ -28,11 +28,12 @@ const COLOR_MENU = [
 ]
 
 type SelectedFlower = {
-  id: string
+  id: string // unique combo ID: flowerName_colorId
   flower_name: string
   color_name: string
   color_hex: string
   price: number
+  quantity: number
 }
 
 type BuilderState = {
@@ -41,16 +42,46 @@ type BuilderState = {
 }
 
 type BuilderAction =
-  | { type: 'ADD_FLOWER'; payload: SelectedFlower }
+  | { type: 'ADD_FLOWER'; payload: { flower_name: string; color_name: string; color_hex: string; price: number; quantity: number } }
   | { type: 'REMOVE_FLOWER'; payload: string }
+  | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'TOGGLE_ADDON'; payload: 'pocky' | 'vase' }
 
 function builderReducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
-    case 'ADD_FLOWER':
-      return { ...state, flowers: [...state.flowers, action.payload] }
+    case 'ADD_FLOWER': {
+      // Create a deterministic ID to group same flowers together
+      const id = `${action.payload.flower_name}_${action.payload.color_name}`.replace(/\s/g, '_')
+      const existing = state.flowers.find(f => f.id === id)
+      
+      if (existing) {
+        // Increment existing flower quantity
+        return {
+          ...state,
+          flowers: state.flowers.map(f =>
+            f.id === id ? { ...f, quantity: f.quantity + action.payload.quantity } : f
+          )
+        }
+      } else {
+        // Add new flower
+        return {
+          ...state,
+          flowers: [...state.flowers, { id, ...action.payload }]
+        }
+      }
+    }
     case 'REMOVE_FLOWER':
       return { ...state, flowers: state.flowers.filter(f => f.id !== action.payload) }
+    case 'UPDATE_QUANTITY': {
+      const { id, quantity } = action.payload
+      if (quantity <= 0) {
+        return { ...state, flowers: state.flowers.filter(f => f.id !== id) }
+      }
+      return {
+        ...state,
+        flowers: state.flowers.map(f => f.id === id ? { ...f, quantity } : f)
+      }
+    }
     case 'TOGGLE_ADDON':
       return { ...state, addons: { ...state.addons, [action.payload]: !state.addons[action.payload] } }
     default:
@@ -67,42 +98,110 @@ export default function CustomBuilder() {
 
   const [showModal, setShowModal] = useState(false)
   const [activeType, setActiveType] = useState<typeof FLOWER_MENU[0] | null>(null)
+  const [quantityInput, setQuantityInput] = useState('')
 
   const MIN_FLOWERS = 2
-  const flowerCount = state.flowers.length
-  const canCheckout = flowerCount >= MIN_FLOWERS
+  const MAX_FLOWERS = 50
+  const totalFlowers = state.flowers.reduce((sum, f) => sum + f.quantity, 0)
+  const canCheckout = totalFlowers >= MIN_FLOWERS
+  const canAddMore = totalFlowers < MAX_FLOWERS
+
+  const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    
+    // Allow empty string for better UX while typing
+    if (value === '') {
+      setQuantityInput('')
+      return
+    }
+    
+    // Only allow numbers
+    if (!/^\d+$/.test(value)) return
+    
+    const num = parseInt(value)
+    
+    // Cap at remaining space
+    const remaining = MAX_FLOWERS - totalFlowers
+    const maxAllowed = Math.min(20, remaining)
+    
+    if (num > maxAllowed) {
+      setQuantityInput(maxAllowed.toString())
+    } else {
+      setQuantityInput(value)
+    }
+  }
+
+  const getQuantityValue = () => {
+    if (quantityInput === '') return 1
+    return parseInt(quantityInput) || 1
+  }
+
+  const handleUpdateFlowerQuantity = (flowerId: string, newQuantity: number) => {
+    const flower = state.flowers.find(f => f.id === flowerId)
+    if (!flower) return
+    
+    const otherFlowersTotal = state.flowers
+      .filter(f => f.id !== flowerId)
+      .reduce((sum, f) => sum + f.quantity, 0)
+    
+    if (otherFlowersTotal + newQuantity > MAX_FLOWERS) {
+      alert(`Maximum ${MAX_FLOWERS} flowers total`)
+      return
+    }
+    
+    dispatch({ type: 'UPDATE_QUANTITY', payload: { id: flowerId, quantity: newQuantity } })
+  }
 
   const handleCheckout = () => {
     if (!canCheckout) return
-    const total = state.flowers.reduce((s, f) => s + f.price, 0) + (state.addons.pocky ? 1.5 : 0) + (state.addons.vase ? 2 : 0)
-    const params = new URLSearchParams({ type: 'custom', data: JSON.stringify({ ...state, total_price: total }) })
+    const flowersTotal = state.flowers.reduce((s, f) => s + (f.price * f.quantity), 0)
+    const total = flowersTotal + (state.addons.pocky ? 1.5 : 0) + (state.addons.vase ? 2 : 0)
+    const params = new URLSearchParams({ 
+      type: 'custom', 
+      data: JSON.stringify({ 
+        flowers: state.flowers.map(f => ({
+          flower_name: f.flower_name,
+          color_name: f.color_name,
+          price: f.price,
+          quantity: f.quantity
+        })),
+        addons: state.addons,
+        total_price: total 
+      }) 
+    })
     router.push(`/checkout?${params.toString()}`)
   }
 
   return (
     <div className="max-w-[1600px] mx-auto p-6 lg:p-10 grid lg:grid-cols-12 gap-10">
       
-      {/* LEFT COLUMN: SELECTION (Takes up 8/12 columns) */}
+      {/* LEFT COLUMN: SELECTION */}
       <div className="lg:col-span-8 space-y-10">
         
         {/* Flower Grid */}
         <section className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm">
-          <h2 className="text-3xl font-bold mb-6 text-stone-800">Choose Your Flowers</h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-3xl font-bold text-stone-800">Choose Your Flowers</h2>
+            <div className="text-sm font-bold text-stone-600">
+              {totalFlowers} / {MAX_FLOWERS} flowers
+            </div>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
             {FLOWER_MENU.map(f => (
               <button 
                 key={f.id} 
-                onClick={() => { setActiveType(f); setShowModal(true) }} 
+                onClick={() => { setActiveType(f); setQuantityInput(''); setShowModal(true) }}
+                disabled={!canAddMore}
                 className="group flex items-center justify-between p-6 border-2 border-stone-100 rounded-2xl transition-all duration-200 
-                  hover:shadow-lg hover:border-rose-400 hover:bg-rose-50 cursor-pointer"
+                  hover:shadow-lg hover:border-rose-400 hover:bg-rose-50 cursor-pointer
+                  disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex flex-col text-left">
                   <span className="text-xl font-bold text-stone-800">{f.name}</span>
                   <span className="text-lg text-rose-600 font-semibold mt-1">${f.price.toFixed(2)}</span>
                 </div>
-                {/* Placeholder Image on Card */}
-                <div className="w-20 h-20 bg-stone-200 rounded-xl ml-4 shrink-0 flex items-center justify-center text-stone-400 font-bold shadow-inner">
-                  IMG
+                <div className="w-20 h-20 bg-stone-200 rounded-xl ml-4 shrink-0 flex items-center justify-center text-4xl">
+                  🌸
                 </div>
               </button>
             ))}
@@ -141,32 +240,48 @@ export default function CustomBuilder() {
         </section>
       </div>
 
-      {/* RIGHT COLUMN: SUMMARY (Takes up 4/12 columns) */}
+      {/* RIGHT COLUMN: SUMMARY */}
       <aside className="lg:col-span-4">
         <div className="bg-white p-8 rounded-2xl border border-stone-200 shadow-xl sticky top-6">
           <h2 className="text-2xl font-bold mb-6 border-b pb-4">Your Bouquet</h2>
           
-          <div className="space-y-4 mb-8 max-h-[60vh] overflow-y-auto pr-2">
-            {state.flowers.length === 0 && (
-               <p className="text-stone-400 text-lg italic text-center py-8">No flowers added yet.</p>
-            )}
-            
-            {state.flowers.map(f => (
-              <div key={f.id} className="flex items-center gap-4 p-3 bg-stone-50 rounded-xl group border border-transparent hover:border-stone-200 transition-all">
-                <div className="w-6 h-6 rounded-full border border-stone-200 shadow-sm shrink-0" style={{ backgroundColor: f.color_hex }} />
-                <div className="flex-1 min-w-0">
-                  <div className="text-base font-bold text-stone-800 truncate">{f.flower_name}</div>
-                  <div className="text-sm text-stone-500 truncate">{f.color_name}</div>
+          <div className="h-[50vh] overflow-y-auto pr-2 mb-8">
+            <div className="space-y-3">
+              {state.flowers.length === 0 && (
+                <p className="text-stone-400 text-lg italic text-center py-8">No flowers added yet.</p>
+              )}
+              
+              {state.flowers.map(f => (
+                <div key={f.id} className="p-4 bg-stone-50 rounded-xl border border-stone-100">
+                  <div className="flex items-center gap-3 mb-3">
+                    <div 
+                      className="w-8 h-8 rounded-full border-2 border-white shadow-md shrink-0" 
+                      style={{ backgroundColor: f.color_hex }} 
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-base font-bold text-stone-800 truncate">{f.flower_name}</div>
+                      <div className="text-sm text-stone-500 truncate">{f.color_name}</div>
+                      <div className="text-xs text-stone-400">${f.price.toFixed(2)} each</div>
+                    </div>
+                    <button 
+                      onClick={() => dispatch({ type: 'REMOVE_FLOWER', payload: f.id })} 
+                      className="w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:bg-red-100 hover:text-red-600 transition-colors shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                  
+                  {/* Static Quantity Display */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs text-stone-600 font-medium">Qty:</label>
+                    <span className="text-base font-bold text-stone-800">{f.quantity}</span>
+                    <span className="text-base font-bold text-rose-600 ml-auto">
+                      ${(f.price * f.quantity).toFixed(2)}
+                    </span>
+                  </div>
                 </div>
-                <span className="text-base font-bold text-rose-600">${f.price.toFixed(2)}</span>
-                <button 
-                  onClick={() => dispatch({ type: 'REMOVE_FLOWER', payload: f.id })} 
-                  className="w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:bg-red-100 hover:text-red-600 transition-colors"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
           
           {!canCheckout && (
@@ -176,17 +291,24 @@ export default function CustomBuilder() {
             </div>
           )}
 
+          {!canAddMore && (
+            <div className="mb-6 bg-orange-50 border border-orange-100 text-orange-800 px-4 py-3 rounded-xl text-sm font-medium flex items-start gap-2">
+              <span>📌</span>
+              Maximum {MAX_FLOWERS} flowers reached.
+            </div>
+          )}
+
           <div className="pt-4 border-t border-stone-100 space-y-3">
-             <div className="flex justify-between text-lg text-stone-600">
-                <span>Add-ons</span>
-                <span>${((state.addons.pocky ? 1.50 : 0) + (state.addons.vase ? 2.00 : 0)).toFixed(2)}</span>
-             </div>
-             <div className="flex justify-between text-3xl font-black text-stone-900">
-                <span>Total</span>
-                <span className="text-rose-600">
-                  ${(state.flowers.reduce((s, f) => s + f.price, 0) + (state.addons.pocky ? 1.5 : 0) + (state.addons.vase ? 2 : 0)).toFixed(2)}
-                </span>
-             </div>
+            <div className="flex justify-between text-lg text-stone-600">
+              <span>Add-ons</span>
+              <span>${((state.addons.pocky ? 1.50 : 0) + (state.addons.vase ? 2.00 : 0)).toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between text-3xl font-black text-stone-900">
+              <span>Total</span>
+              <span className="text-rose-600">
+                ${(state.flowers.reduce((s, f) => s + (f.price * f.quantity), 0) + (state.addons.pocky ? 1.5 : 0) + (state.addons.vase ? 2 : 0)).toFixed(2)}
+              </span>
+            </div>
           </div>
 
           <button 
@@ -201,24 +323,23 @@ export default function CustomBuilder() {
         </div>
       </aside>
 
-      {/* BIG MODAL */}
+      {/* MODAL */}
       {showModal && activeType && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-8">
-          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col md:flex-row max-h-[90vh]">
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
             
-            {/* LEFT SIDE: Big Image Preview */}
-            <div className="w-full md:w-1/2 bg-stone-100 p-8 flex items-center justify-center relative">
-               {/* This is the big placeholder image */}
-               <div className="w-full aspect-square bg-stone-200 rounded-2xl flex items-center justify-center shadow-inner">
-                  <span className="text-4xl font-bold text-stone-300">IMAGE OF {activeType.name.toUpperCase()}</span>
-               </div>
-               {/* Mobile close button */}
-               <button 
-                 onClick={() => setShowModal(false)}
-                 className="md:hidden absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md font-bold text-stone-500"
-               >
-                 ✕
-               </button>
+            {/* LEFT SIDE: Image */}
+            <div className="w-full md:w-1/2 bg-gradient-to-br from-rose-50 to-pink-50 p-8 flex items-center justify-center relative">
+              <div className="w-full aspect-square bg-white/50 backdrop-blur rounded-2xl flex flex-col items-center justify-center shadow-inner">
+                <span className="text-8xl mb-4">🌸</span>
+                <span className="text-2xl font-bold text-stone-700">{activeType.name}</span>
+              </div>
+              <button 
+                onClick={() => setShowModal(false)}
+                className="md:hidden absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md font-bold text-stone-500"
+              >
+                ✕
+              </button>
             </div>
 
             {/* RIGHT SIDE: Color Selection */}
@@ -236,6 +357,22 @@ export default function CustomBuilder() {
                 </button>
               </div>
 
+              {/* Quantity Input */}
+              <div className="mb-6 bg-rose-50 p-4 rounded-xl">
+                <label className="block text-sm font-bold text-stone-700 mb-2">Quantity</label>
+                <input 
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Enter quantity (max 20)"
+                  value={quantityInput}
+                  onChange={handleQuantityInputChange}
+                  className="w-full px-4 py-3 border-2 border-rose-300 rounded-lg focus:border-rose-500 focus:outline-none font-bold text-lg text-center"
+                />
+                <p className="text-xs text-stone-600 mt-2">
+                  {MAX_FLOWERS - totalFlowers} flowers remaining • Max 20 per selection
+                </p>
+              </div>
+
               <div className="flex-1 overflow-y-auto">
                 <p className="text-stone-500 font-medium mb-4 uppercase tracking-wide text-sm">Select a Color</p>
                 <div className="grid grid-cols-2 gap-4">
@@ -243,43 +380,39 @@ export default function CustomBuilder() {
                     <button 
                       key={c.id} 
                       onClick={() => { 
+                        const qty = getQuantityValue()
+                        if (totalFlowers + qty > MAX_FLOWERS) {
+                          alert(`Only ${MAX_FLOWERS - totalFlowers} flowers remaining`)
+                          return
+                        }
                         dispatch({ 
                           type: 'ADD_FLOWER', 
                           payload: { 
-                            id: Math.random().toString(), 
                             flower_name: activeType.name, 
                             color_name: c.name, 
                             color_hex: c.hex, 
-                            price: activeType.price 
+                            price: activeType.price,
+                            quantity: qty
                           } 
-                        }); 
-                        setShowModal(false); 
+                        })
+                        setShowModal(false)
+                        setQuantityInput('')
                       }} 
-                      className="group flex items-center gap-4 p-3 rounded-xl border-2 border-transparent hover:border-stone-200 hover:bg-stone-50 transition-all text-left"
+                      className="group flex items-center gap-3 p-3 rounded-xl border-2 border-transparent hover:border-rose-300 hover:bg-rose-50 transition-all text-left"
                     >
                       <div 
-                        className="w-12 h-12 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform" 
+                        className="w-10 h-10 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform shrink-0" 
                         style={{ backgroundColor: c.hex }} 
                       />
-                      <div>
-                        <span className="block font-bold text-stone-800">{c.name}</span>
+                      <div className="flex-1 min-w-0">
+                        <span className="block font-bold text-stone-800 text-sm truncate">{c.name}</span>
                         <span className="text-xs text-stone-400 font-mono">{c.id}</span>
                       </div>
                     </button>
                   ))}
                 </div>
               </div>
-
-              <div className="mt-8 pt-6 border-t border-stone-100">
-                <button 
-                  onClick={() => setShowModal(false)}
-                  className="w-full py-3 text-stone-400 font-bold hover:text-stone-600 transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
             </div>
-
           </div>
         </div>
       )}

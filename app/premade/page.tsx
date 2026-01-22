@@ -11,7 +11,7 @@ export default async function PresetBundlesPage() {
     .order('created_at', { ascending: false })
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50">
+    <main className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-100">
       <div className="container mx-auto px-4 py-12">
         {/* Header */}
         <div className="mb-8">

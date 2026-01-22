@@ -12,6 +12,21 @@ type OrderEmailData = {
   order_type: string
   total_price: number
   
+  // Fulfillment details
+  fulfillment_method?: 'pickup' | 'delivery'
+  fulfillment_date?: string
+  pickup_name?: string
+  pickup_location?: string
+  pickup_instructions?: string
+  delivery_address?: string
+  delivery_instructions?: string
+  on_grounds_housing?: boolean
+  delivery_fee?: number
+  
+  // Add-ons
+  addon_pocky?: boolean
+  addon_vase?: boolean
+  
   // For bundle orders
   bundle_name?: string
   selected_theme?: string
@@ -35,18 +50,15 @@ export async function sendOrderNotification(data: OrderEmailData) {
       `
     } else if (data.order_type === 'custom') {
       const flowers = data.custom_bouquet?.flowers || []
-      const addons = data.custom_bouquet?.addons || {}
       
       orderDetailsHtml = `
         <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
           <h3 style="margin: 0 0 10px 0; color: #881337;">Custom Bouquet</h3>
           <ul style="margin: 10px 0; padding-left: 20px;">
             ${flowers.map((f: any) => `
-              <li style="margin: 5px 0;">${f.flower_name} (${f.color_name}) - $${f.price.toFixed(2)}</li>
+              <li style="margin: 5px 0;">${f.quantity || 1}x ${f.flower_name} (${f.color_name}) - $${f.price.toFixed(2)} each = $${((f.quantity || 1) * f.price).toFixed(2)}</li>
             `).join('')}
           </ul>
-          ${addons.wrapped ? '<p style="margin: 5px 0;"><strong>Add-on:</strong> Gift wrapped (+$2.00)</p>' : ''}
-          ${addons.organization ? `<p style="margin: 5px 0;"><strong>Organization:</strong> ${addons.organization === 'maker' ? 'Organized by maker' : 'DIY'}</p>` : ''}
         </div>
       `
     } else if (data.order_type === 'individual') {
@@ -57,8 +69,49 @@ export async function sendOrderNotification(data: OrderEmailData) {
           <h3 style="margin: 0 0 10px 0; color: #881337;">Individual Flowers</h3>
           <ul style="margin: 10px 0; padding-left: 20px;">
             ${flowers.map((f: any) => `
-              <li style="margin: 5px 0;">${f.quantity}x ${f.flower_name} (${f.color_name}) - $${(f.price * f.quantity).toFixed(2)}</li>
+              <li style="margin: 5px 0;">${f.quantity}x ${f.flower_name} (${f.color_name}) - $${f.price.toFixed(2)} each = $${(f.price * f.quantity).toFixed(2)}</li>
             `).join('')}
+          </ul>
+        </div>
+      `
+    }
+
+    // Add-ons section
+    if (data.addon_pocky || data.addon_vase) {
+      orderDetailsHtml += `
+        <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
+          <h3 style="margin: 0 0 10px 0; color: #881337;">Add-ons</h3>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            ${data.addon_pocky ? '<li style="margin: 5px 0;">Strawberry Pocky (+$1.50)</li>' : ''}
+            ${data.addon_vase ? '<li style="margin: 5px 0;">Glass Vase (+$2.00)</li>' : ''}
+          </ul>
+        </div>
+      `
+    }
+
+    // Fulfillment details
+    if (data.fulfillment_method === 'pickup') {
+      orderDetailsHtml += `
+        <div style="margin: 20px 0; padding: 15px; background-color: #eff6ff; border-radius: 8px;">
+          <h3 style="margin: 0 0 10px 0; color: #1e40af;">📍 Pickup Details</h3>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            <li style="margin: 5px 0;"><strong>Pickup Name:</strong> ${data.pickup_name}</li>
+            <li style="margin: 5px 0;"><strong>Pickup Date:</strong> ${data.fulfillment_date}</li>
+            <li style="margin: 5px 0;"><strong>Location:</strong> ${data.pickup_location}</li>
+            ${data.pickup_instructions ? `<li style="margin: 5px 0;"><strong>Instructions:</strong> ${data.pickup_instructions}</li>` : ''}
+          </ul>
+        </div>
+      `
+    } else if (data.fulfillment_method === 'delivery') {
+      orderDetailsHtml += `
+        <div style="margin: 20px 0; padding: 15px; background-color: #eff6ff; border-radius: 8px;">
+          <h3 style="margin: 0 0 10px 0; color: #1e40af;">🚗 Delivery Details</h3>
+          <ul style="margin: 10px 0; padding-left: 20px;">
+            <li style="margin: 5px 0;"><strong>Address:</strong> ${data.delivery_address}</li>
+            <li style="margin: 5px 0;"><strong>Delivery Date:</strong> ${data.fulfillment_date}</li>
+            ${data.delivery_instructions ? `<li style="margin: 5px 0;"><strong>Instructions:</strong> ${data.delivery_instructions}</li>` : ''}
+            ${data.on_grounds_housing ? '<li style="margin: 5px 0;"><strong>On-Grounds Housing:</strong> Yes (must be home)</li>' : ''}
+            ${data.delivery_fee !== undefined ? `<li style="margin: 5px 0;"><strong>Delivery Fee:</strong> ${data.delivery_fee === 0 ? 'FREE' : '$' + data.delivery_fee.toFixed(2)}</li>` : ''}
           </ul>
         </div>
       `
@@ -89,7 +142,7 @@ export async function sendOrderNotification(data: OrderEmailData) {
                 <td style="padding: 8px 0; font-weight: 600;">${data.customer_name}</td>
               </tr>
               <tr>
-                <td style="padding: 8px 0; color: #666;">Phone:</td>
+                <td style="padding: 8px 0; color: #666;">Phone/IG:</td>
                 <td style="padding: 8px 0; font-weight: 600;">${data.customer_phone}</td>
               </tr>
               ${data.customer_email ? `
@@ -128,13 +181,16 @@ export async function sendOrderNotification(data: OrderEmailData) {
             <div style="margin-top: 25px; padding: 20px; background-color: #fffbeb; border-radius: 8px; border: 2px dashed #f59e0b;">
               <p style="margin: 0 0 10px 0; font-weight: bold; color: #92400e;">⏳ Awaiting Payment</p>
               <p style="margin: 0; color: #78350f; font-size: 14px;">
-                This order is waiting for Venmo payment confirmation before work begins.
+                This order is waiting for Venmo payment confirmation before work begins. Venmo: @juzaoi
               </p>
             </div>
           </div>
 
           <div style="margin-top: 20px; text-align: center; color: #666; font-size: 12px;">
             <p>Order placed on ${new Date().toLocaleString()}</p>
+            <p style="margin-top: 10px;">
+              Contact customer via Instagram DM at @fauxlowers.byjz to confirm date/time
+            </p>
           </div>
         </body>
       </html>
@@ -142,9 +198,9 @@ export async function sendOrderNotification(data: OrderEmailData) {
 
     // Send to business
     await resend.emails.send({
-      from: 'Pipecleaner Flowers <orders@resend.dev>', // This is Resend's test domain
+      from: 'Pipecleaner Flowers <orders@resend.dev>',
       to: process.env.BUSINESS_EMAIL!,
-      subject: `New Order: ${data.order_number}`,
+      subject: `New Order: ${data.order_number} - ${data.fulfillment_method === 'pickup' ? 'Pickup' : 'Delivery'} on ${data.fulfillment_date}`,
       html: emailHtml
     })
 

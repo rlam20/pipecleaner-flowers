@@ -26,6 +26,16 @@ type CreateOrderInput = {
   custom_bouquet?: any
   
   total_price: number
+
+  // Fulfillment details
+  fulfillment_method: 'pickup' | 'delivery'
+  fulfillment_date?: string
+  pickup_name?: string
+  pickup_location?: string
+  pickup_instructions?: string
+  delivery_address?: string
+  delivery_instructions?: string
+  on_grounds_housing?: boolean
 }
 
 export async function createOrder(input: CreateOrderInput) {
@@ -80,7 +90,7 @@ export async function createOrder(input: CreateOrderInput) {
   }
 
   // TODO: Send email notification (we'll add this later)
-try {
+  try {
     await sendOrderNotification({
       order_number,
       customer_name: input.customer_name,
@@ -92,7 +102,17 @@ try {
       total_price: input.total_price,
       bundle_name: input.order_type === 'bundle' ? orderData.preset_bundle_id : undefined,
       selected_theme: input.selected_theme,
-      custom_bouquet: input.custom_bouquet
+      custom_bouquet: input.custom_bouquet,
+
+      // Fulfillment details
+      fulfillment_method: input.fulfillment_method,
+      fulfillment_date: input.fulfillment_date,
+      pickup_name: input.fulfillment_method === 'pickup' ? input.pickup_name : undefined,
+      pickup_location: input.fulfillment_method === 'pickup' ? input.pickup_location : undefined,
+      pickup_instructions: input.fulfillment_method === 'pickup' ? input.pickup_instructions : undefined,
+      delivery_address: input.fulfillment_method === 'delivery' ? input.delivery_address : undefined,
+      delivery_instructions: input.fulfillment_method === 'delivery' ? input.delivery_instructions : undefined,
+      on_grounds_housing: input.fulfillment_method === 'delivery' ? input.on_grounds_housing : undefined
     })
   } catch (emailError) {
     console.error('Email notification failed:', emailError)

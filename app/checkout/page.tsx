@@ -41,7 +41,7 @@ function CheckoutContent() {
 
   if (!orderType || !orderData.type) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-100 flex items-center justify-center">
         <div className="bg-white rounded-lg shadow-md p-8 max-w-md">
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Invalid Order</h2>
           <p className="text-gray-600 mb-6">No order data found. Please start over.</p>
@@ -59,7 +59,7 @@ function CheckoutContent() {
 export default function CheckoutPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-rose-50 via-pink-50 to-purple-100 flex items-center justify-center">
         <div className="text-gray-600">Loading checkout...</div>
       </div>
     }>

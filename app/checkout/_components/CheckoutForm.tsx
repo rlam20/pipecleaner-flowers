@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createOrder } from '@/lib/actions/orders'
 import { FulfillmentMethod, OrderAddons } from '@/lib/types'
+import { isValidEmail, isValidPhoneOrInstagram } from '@/lib/utils'
 import FulfillmentMethodSelector from './FulfillmentMethodSelector'
 import PickupForm from './PickupForm'
 import DeliveryForm from './DeliveryForm'
@@ -18,6 +19,10 @@ type Props = {
 export default function CheckoutForm({ orderData }: Props) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState({
+    customer_phone: '',
+    customer_email: ''
+  })
   
   // Customer info
   const [formData, setFormData] = useState({
@@ -50,10 +55,40 @@ export default function CheckoutForm({ orderData }: Props) {
   })
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value
+      [name]: value
     })
+
+    // Real-time validation for phone and email
+    if (name === 'customer_phone') {
+      if (value && !isValidPhoneOrInstagram(value)) {
+        setErrors(prev => ({
+          ...prev,
+          customer_phone: 'Enter a valid phone number or Instagram handle'
+        }))
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          customer_phone: ''
+        }))
+      }
+    }
+
+    if (name === 'customer_email') {
+      if (value && !isValidEmail(value)) {
+        setErrors(prev => ({
+          ...prev,
+          customer_email: 'Enter a valid email address'
+        }))
+      } else {
+        setErrors(prev => ({
+          ...prev,
+          customer_email: ''
+        }))
+      }
+    }
   }
 
   const handlePickupChange = (field: string, value: any) => {
@@ -112,6 +147,18 @@ export default function CheckoutForm({ orderData }: Props) {
     
     if (!formData.customer_name || !formData.customer_phone) {
       alert('Please fill in your name and phone number')
+      return
+    }
+
+    // Validate phone number or Instagram handle
+    if (!isValidPhoneOrInstagram(formData.customer_phone)) {
+      alert('Please enter a valid phone number (e.g., (555) 123-4567) or Instagram handle (e.g., @yourhandle)')
+      return
+    }
+
+    // Validate email if provided
+    if (formData.customer_email && !isValidEmail(formData.customer_email)) {
+      alert('Please enter a valid email address')
       return
     }
 
@@ -227,10 +274,12 @@ export default function CheckoutForm({ orderData }: Props) {
                     id="customer_name"
                     name="customer_name"
                     required
+                    maxLength={50}
                     value={formData.customer_name}
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                   />
+                  <p className="text-xs text-gray-500 mt-1">{formData.customer_name.length}/50</p>
                 </div>
 
                 <div>
@@ -245,8 +294,13 @@ export default function CheckoutForm({ orderData }: Props) {
                     value={formData.customer_phone}
                     onChange={handleChange}
                     placeholder="(555) 123-4567 or @yourhandle"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent ${
+                      errors.customer_phone ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.customer_phone && (
+                    <p className="text-red-500 text-sm mt-1">{errors.customer_phone}</p>
+                  )}
                 </div>
 
                 <div>
@@ -259,8 +313,13 @@ export default function CheckoutForm({ orderData }: Props) {
                     name="customer_email"
                     value={formData.customer_email}
                     onChange={handleChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+                    className={`w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent ${
+                      errors.customer_email ? 'border-red-500' : 'border-gray-300'
+                    }`}
                   />
+                  {errors.customer_email && (
+                    <p className="text-red-500 text-sm mt-1">{errors.customer_email}</p>
+                  )}
                 </div>
               </div>
             </div>
