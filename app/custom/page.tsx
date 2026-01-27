@@ -1,21 +1,10 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import Image from 'next/image' // Import Next.js Image component
+import Image from 'next/image'
 
 export default async function CustomPage() {
   const supabase = await createClient()
   
-  // Fetch flower types and color options (kept for potential future use or prefetching)
-  const { data: flowerTypes } = await supabase
-    .from('flower_types')
-    .select('*')
-    .order('name')
-
-  const { data: colorOptions } = await supabase
-    .from('color_options')
-    .select('*')
-    .order('name')
-
   return (
     <main className="min-h-screen bg-stone-50">
       <div className="max-w-[1600px] mx-auto px-6 py-16">
@@ -32,24 +21,22 @@ export default async function CustomPage() {
           </p>
         </div>
 
-        {/* Two Options - Scaled Up */}
+        {/* Two Options */}
         <div className="grid md:grid-cols-2 gap-10">
           
-          {/* Build a Bouquet */}
+          {/* Option 1: Build a Bouquet */}
           <Link
             href="/custom/bouquet"
             className="group bg-white rounded-3xl shadow-sm border border-stone-200 hover:shadow-2xl hover:border-rose-200 transition-all duration-300 overflow-hidden flex flex-col items-center justify-center p-16 md:p-24 text-center min-h-[500px]"
           >
-            {/* Tiny Image Replacement */}
             <div className="relative w-32 h-32 mb-8 rounded-full overflow-hidden shadow-inner border-4 border-stone-100 group-hover:border-rose-100 transition-colors">
               <Image 
-                src="/IMG_5299.jpeg" // Using your uploaded image
+                src="/IMG_5299.jpeg"
                 alt="Custom Bouquet"
                 fill
                 className="object-cover"
               />
             </div>
-            
             <h2 className="text-4xl font-bold text-stone-900 mb-6 group-hover:text-rose-700 transition-colors">
               Build a Bouquet
             </h2>
@@ -61,21 +48,19 @@ export default async function CustomPage() {
             </div>
           </Link>
 
-          {/* Individual Flowers */}
+          {/* Option 2: Individual Flowers */}
           <Link
             href="/custom/individual"
             className="group bg-white rounded-3xl shadow-sm border border-stone-200 hover:shadow-2xl hover:border-rose-200 transition-all duration-300 overflow-hidden flex flex-col items-center justify-center p-16 md:p-24 text-center min-h-[500px]"
           >
-            {/* Tiny Image Replacement */}
             <div className="relative w-32 h-32 mb-8 rounded-full overflow-hidden shadow-inner border-4 border-stone-100 group-hover:border-rose-100 transition-colors">
               <Image 
-                src="/IMG_5324.jpeg" // Using your uploaded image
+                src="/IMG_5324.jpeg"
                 alt="Individual Flowers"
                 fill
                 className="object-cover"
               />
             </div>
-
             <h2 className="text-4xl font-bold text-stone-900 mb-6 group-hover:text-rose-700 transition-colors">
               Individual Flowers
             </h2>

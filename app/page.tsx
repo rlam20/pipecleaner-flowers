@@ -10,10 +10,12 @@ export default function Home() {
       >
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-          style={{ backgroundImage: "url('/public/flowers/IMG_5299.jpg')" }} // Path updated here
+          // FIX 1: Removed '/public', changed .jpg to .jpeg
+          style={{ backgroundImage: "url('/IMG_5299.jpeg')" }} 
         />
-<div className="absolute inset-0 bg-purple-950/45 group-hover:bg-purple-950/60 transition-all duration-500" />
- <div className="relative h-full flex flex-col items-center justify-center text-white px-8">
+        <div className="absolute inset-0 bg-purple-950/45 group-hover:bg-purple-950/60 transition-all duration-500" />
+        
+        <div className="relative h-full flex flex-col items-center justify-center text-white px-8">
           <h2 className="text-5xl md:text-6xl font-bold text-center leading-tight transform group-hover:scale-105 transition-transform duration-500">
             Build <br/> Custom <br/> Bouquets
           </h2>
@@ -34,18 +36,19 @@ export default function Home() {
       >
         <div 
           className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
-          style={{ backgroundImage: "url('/public/flowers/IMG_5324.jpg')" }} // Assuming your second image is named similarly
+          // FIX 2: Restored the other main image (IMG_5324.jpeg)
+          style={{ backgroundImage: "url('/IMG_5324.jpeg')" }} 
         />
         <div className="absolute inset-0 bg-rose-900/40 group-hover:bg-rose-900/60 transition-all duration-500" />
         
         <div className="relative h-full flex flex-col items-center justify-center text-white px-8">
-         <h2 className="text-5xl md:text-6xl font-bold text-center leading-tight transform group-hover:scale-105 transition-transform duration-500">
-  Shop <br/> Premade <br/> Bundles
-</h2>
+          <h2 className="text-5xl md:text-6xl font-bold text-center leading-tight transform group-hover:scale-105 transition-transform duration-500">
+            Shop <br/> Premade <br/> Bundles
+          </h2>
 
-<p className="absolute bottom-1/4 translate-y-1 text-xl md:text-2xl text-center max-w-md opacity-0 group-hover:opacity-100 transition-all duration-500">
-  Browse our curated flower bundle collections, ready to order!
-</p>
+          <p className="absolute bottom-1/4 translate-y-1 text-xl md:text-2xl text-center max-w-md opacity-0 group-hover:opacity-100 transition-all duration-500">
+            Browse our curated flower bundle collections, ready to order!
+          </p>
         </div>
       </Link>
     </main>

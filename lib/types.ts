@@ -4,6 +4,7 @@ export type FlowerType = {
   id: string;
   name: string;
   base_price: number;
+  image_url: string;
 };
 
 export type ColorOption = {

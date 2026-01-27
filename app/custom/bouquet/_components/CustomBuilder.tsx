@@ -2,19 +2,10 @@
 
 import { useState, useReducer } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image' // Import Image
+import type { FlowerType } from '@/lib/types' // Import shared types
 
-// Flower Menu
-const FLOWER_MENU = [
-  { id: 'lily_small', name: 'Lily (Small)', price: 5.00 },
-  { id: 'lily_large', name: 'Lily (Large)', price: 7.00 },
-  { id: 'rose', name: 'Rose', price: 6.00 },
-  { id: 'stargazer_small', name: 'Stargazer Lily (Small)', price: 6.00 },
-  { id: 'stargazer_large', name: 'Stargazer Lily (Large)', price: 8.00 },
-  { id: 'lavender', name: 'Lavender', price: 5.00 },
-  { id: 'hibiscus', name: 'Hibiscus', price: 7.00 },
-  { id: 'dahlia', name: 'Dahlia', price: 7.00 },
-  { id: 'laceleaf', name: 'Laceleaf', price: 6.00 },
-]
+// Removed hardcoded FLOWER_MENU
 
 const COLOR_MENU = [
   { id: 'PK1', name: 'Light Pink', hex: '#FFC0CB' },
@@ -28,7 +19,8 @@ const COLOR_MENU = [
 ]
 
 type SelectedFlower = {
-  id: string // unique combo ID: flowerName_colorId
+  id: string 
+  flower_type_id: string // ADDED: To track the real DB ID
   flower_name: string
   color_name: string
   color_hex: string
@@ -42,7 +34,7 @@ type BuilderState = {
 }
 
 type BuilderAction =
-  | { type: 'ADD_FLOWER'; payload: { flower_name: string; color_name: string; color_hex: string; price: number; quantity: number } }
+  | { type: 'ADD_FLOWER'; payload: { flower_type_id: string; flower_name: string; color_name: string; color_hex: string; price: number; quantity: number } }
   | { type: 'REMOVE_FLOWER'; payload: string }
   | { type: 'UPDATE_QUANTITY'; payload: { id: string; quantity: number } }
   | { type: 'TOGGLE_ADDON'; payload: 'pocky' | 'vase' }
@@ -50,12 +42,11 @@ type BuilderAction =
 function builderReducer(state: BuilderState, action: BuilderAction): BuilderState {
   switch (action.type) {
     case 'ADD_FLOWER': {
-      // Create a deterministic ID to group same flowers together
+      // Create a deterministic ID
       const id = `${action.payload.flower_name}_${action.payload.color_name}`.replace(/\s/g, '_')
       const existing = state.flowers.find(f => f.id === id)
       
       if (existing) {
-        // Increment existing flower quantity
         return {
           ...state,
           flowers: state.flowers.map(f =>
@@ -63,7 +54,6 @@ function builderReducer(state: BuilderState, action: BuilderAction): BuilderStat
           )
         }
       } else {
-        // Add new flower
         return {
           ...state,
           flowers: [...state.flowers, { id, ...action.payload }]
@@ -89,7 +79,12 @@ function builderReducer(state: BuilderState, action: BuilderAction): BuilderStat
   }
 }
 
-export default function CustomBuilder() {
+// Add Props interface
+type Props = {
+  flowerTypes: FlowerType[]
+}
+
+export default function CustomBuilder({ flowerTypes }: Props) {
   const router = useRouter()
   const [state, dispatch] = useReducer(builderReducer, {
     flowers: [],
@@ -97,7 +92,7 @@ export default function CustomBuilder() {
   })
 
   const [showModal, setShowModal] = useState(false)
-  const [activeType, setActiveType] = useState<typeof FLOWER_MENU[0] | null>(null)
+  const [activeType, setActiveType] = useState<FlowerType | null>(null) // Use FlowerType
   const [quantityInput, setQuantityInput] = useState('')
 
   const MIN_FLOWERS = 2
@@ -106,24 +101,18 @@ export default function CustomBuilder() {
   const canCheckout = totalFlowers >= MIN_FLOWERS
   const canAddMore = totalFlowers < MAX_FLOWERS
 
+  // ... [Keep existing handleQuantityInputChange, getQuantityValue, handleUpdateFlowerQuantity functions] ...
+  
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
-    
-    // Allow empty string for better UX while typing
     if (value === '') {
       setQuantityInput('')
       return
     }
-    
-    // Only allow numbers
     if (!/^\d+$/.test(value)) return
-    
     const num = parseInt(value)
-    
-    // Cap at remaining space
     const remaining = MAX_FLOWERS - totalFlowers
     const maxAllowed = Math.min(20, remaining)
-    
     if (num > maxAllowed) {
       setQuantityInput(maxAllowed.toString())
     } else {
@@ -136,30 +125,16 @@ export default function CustomBuilder() {
     return parseInt(quantityInput) || 1
   }
 
-  const handleUpdateFlowerQuantity = (flowerId: string, newQuantity: number) => {
-    const flower = state.flowers.find(f => f.id === flowerId)
-    if (!flower) return
-    
-    const otherFlowersTotal = state.flowers
-      .filter(f => f.id !== flowerId)
-      .reduce((sum, f) => sum + f.quantity, 0)
-    
-    if (otherFlowersTotal + newQuantity > MAX_FLOWERS) {
-      alert(`Maximum ${MAX_FLOWERS} flowers total`)
-      return
-    }
-    
-    dispatch({ type: 'UPDATE_QUANTITY', payload: { id: flowerId, quantity: newQuantity } })
-  }
-
   const handleCheckout = () => {
     if (!canCheckout) return
     const flowersTotal = state.flowers.reduce((s, f) => s + (f.price * f.quantity), 0)
     const total = flowersTotal + (state.addons.pocky ? 1.5 : 0) + (state.addons.vase ? 2 : 0)
+    
     const params = new URLSearchParams({ 
       type: 'custom', 
       data: JSON.stringify({ 
         flowers: state.flowers.map(f => ({
+          flower_type_id: f.flower_type_id, // Pass the real ID!
           flower_name: f.flower_name,
           color_name: f.color_name,
           price: f.price,
@@ -187,28 +162,38 @@ export default function CustomBuilder() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-            {FLOWER_MENU.map(f => (
+            {flowerTypes.map(f => (
               <button 
                 key={f.id} 
                 onClick={() => { setActiveType(f); setQuantityInput(''); setShowModal(true) }}
                 disabled={!canAddMore}
-                className="group flex items-center justify-between p-6 border-2 border-stone-100 rounded-2xl transition-all duration-200 
+                className="group flex items-center justify-between p-4 border-2 border-stone-100 rounded-2xl transition-all duration-200 
                   hover:shadow-lg hover:border-rose-400 hover:bg-rose-50 cursor-pointer
                   disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <div className="flex flex-col text-left">
                   <span className="text-xl font-bold text-stone-800">{f.name}</span>
-                  <span className="text-lg text-rose-600 font-semibold mt-1">${f.price.toFixed(2)}</span>
+                  <span className="text-lg text-rose-600 font-semibold mt-1">${f.base_price.toFixed(2)}</span>
                 </div>
-                <div className="w-20 h-20 bg-stone-200 rounded-xl ml-4 shrink-0 flex items-center justify-center text-4xl">
-                  🌸
+                {/* NEW IMAGE RENDERING */}
+                <div className="relative w-20 h-20 bg-stone-200 rounded-xl ml-4 shrink-0 overflow-hidden">
+                   {f.image_url ? (
+                      <Image 
+                        src={`/flowers/${f.image_url}`}
+                        alt={f.name}
+                        fill
+                        className="object-cover"
+                      />
+                   ) : (
+                      <div className="flex items-center justify-center h-full text-4xl">🌸</div>
+                   )}
                 </div>
               </button>
             ))}
           </div>
         </section>
 
-        {/* Add-ons Grid */}
+        {/* ... [Keep Add-ons Section] ... */}
         <section className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm">
           <h2 className="text-3xl font-bold mb-6 text-stone-800">Add-ons</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -238,9 +223,10 @@ export default function CustomBuilder() {
             </button>
           </div>
         </section>
+
       </div>
 
-      {/* RIGHT COLUMN: SUMMARY */}
+      {/* RIGHT COLUMN: SUMMARY - mostly same, just updating props usage */}
       <aside className="lg:col-span-4">
         <div className="bg-white p-8 rounded-2xl border border-stone-200 shadow-xl sticky top-6">
           <h2 className="text-2xl font-bold mb-6 border-b pb-4">Your Bouquet</h2>
@@ -284,6 +270,7 @@ export default function CustomBuilder() {
             </div>
           </div>
           
+          {/* ... [Keep warnings and totals] ... */}
           {!canCheckout && (
             <div className="mb-6 bg-amber-50 border border-amber-100 text-amber-800 px-4 py-3 rounded-xl text-sm font-medium flex items-start gap-2">
               <span>⚠️</span>
@@ -328,11 +315,22 @@ export default function CustomBuilder() {
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-8">
           <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
             
-            {/* LEFT SIDE: Image */}
+            {/* LEFT SIDE: Image - UPDATED TO USE DB IMAGE */}
             <div className="w-full md:w-1/2 bg-gradient-to-br from-rose-50 to-pink-50 p-8 flex items-center justify-center relative">
-              <div className="w-full aspect-square bg-white/50 backdrop-blur rounded-2xl flex flex-col items-center justify-center shadow-inner">
-                <span className="text-8xl mb-4">🌸</span>
-                <span className="text-2xl font-bold text-stone-700">{activeType.name}</span>
+              <div className="w-full aspect-square bg-white/50 backdrop-blur rounded-2xl flex flex-col items-center justify-center shadow-inner overflow-hidden relative">
+                 {activeType.image_url ? (
+                    <Image 
+                      src={`/flowers/${activeType.image_url}`}
+                      alt={activeType.name}
+                      fill
+                      className="object-cover"
+                    />
+                 ) : (
+                    <>
+                      <span className="text-8xl mb-4">🌸</span>
+                      <span className="text-2xl font-bold text-stone-700">{activeType.name}</span>
+                    </>
+                 )}
               </div>
               <button 
                 onClick={() => setShowModal(false)}
@@ -347,7 +345,7 @@ export default function CustomBuilder() {
               <div className="flex justify-between items-start mb-6">
                 <div>
                   <h3 className="text-3xl font-black text-stone-900">{activeType.name}</h3>
-                  <p className="text-xl text-rose-600 font-bold mt-2">${activeType.price.toFixed(2)}</p>
+                  <p className="text-xl text-rose-600 font-bold mt-2">${activeType.base_price.toFixed(2)}</p>
                 </div>
                 <button 
                   onClick={() => setShowModal(false)} 
@@ -357,7 +355,7 @@ export default function CustomBuilder() {
                 </button>
               </div>
 
-              {/* Quantity Input */}
+              {/* ... [Keep Quantity Input] ... */}
               <div className="mb-6 bg-rose-50 p-4 rounded-xl">
                 <label className="block text-sm font-bold text-stone-700 mb-2">Quantity</label>
                 <input 
@@ -388,10 +386,11 @@ export default function CustomBuilder() {
                         dispatch({ 
                           type: 'ADD_FLOWER', 
                           payload: { 
+                            flower_type_id: activeType.id, // PASS DB ID
                             flower_name: activeType.name, 
                             color_name: c.name, 
                             color_hex: c.hex, 
-                            price: activeType.price,
+                            price: activeType.base_price, // Use base_price
                             quantity: qty
                           } 
                         })

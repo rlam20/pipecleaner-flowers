@@ -1,7 +1,16 @@
+import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import CustomBuilder from './_components/CustomBuilder'
+import CustomBuilder from './_components/CustomBuilder' // This import belongs HERE
 
-export default function BouquetBuilderPage() {
+export default async function BouquetBuilderPage() {
+  const supabase = await createClient()
+
+  // Fetch data
+  const { data: flowerTypes } = await supabase
+    .from('flower_types')
+    .select('*')
+    .order('name')
+
   return (
     <main className="min-h-screen bg-stone-50">
       <div className="container mx-auto px-4 py-12">
@@ -17,8 +26,8 @@ export default function BouquetBuilderPage() {
           </p>
         </div>
 
-        {/* Removed props since CustomBuilder now uses the hardcoded menu */}
-        <CustomBuilder />
+        {/* Render the builder */}
+        <CustomBuilder flowerTypes={flowerTypes || []} />
       </div>
     </main>
   )
