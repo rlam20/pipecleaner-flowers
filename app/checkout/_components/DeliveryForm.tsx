@@ -1,11 +1,13 @@
 'use client'
 
 import DatePickerField from './DatePickerField'
+import AddressAutocomplete from './AddressAutocomplete' // <--- Import the new component
 
 type Props = {
   deliveryAddress: string
   deliveryDate: Date | null
   deliveryInstructions: string
+  addressInstructions: string
   onGroundsHousing: boolean
   onChange: (field: string, value: any) => void
   orderType: 'bundle' | 'custom' | 'individual'
@@ -15,6 +17,7 @@ export default function DeliveryForm({
   deliveryAddress,
   deliveryDate,
   deliveryInstructions,
+  addressInstructions,
   onGroundsHousing,
   onChange,
   orderType
@@ -30,20 +33,31 @@ export default function DeliveryForm({
         </label>
         <p className="text-xs text-gray-500 mb-2">
           Please enter your FULL address, including name of complex if applicable.
-          <br />
-          Example: Crossroads, 2111 Jefferson Park Avenue, Apt. ____
         </p>
-        <textarea
-          rows={3}
-          required
+        
+        {/* REPLACED TEXTAREA WITH AUTOCOMPLETE */}
+        <AddressAutocomplete 
           value={deliveryAddress}
-          onChange={(e) => onChange('deliveryAddress', e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
-          placeholder="Full delivery address..."
+          onChange={(val) => onChange('deliveryAddress', val)}
         />
+        
         <p className="text-xs text-gray-500 mt-1">
           Disclaimer: This information will not be shared and will only be used for delivery purposes.
         </p>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          Apt/Suite #
+        </label>
+        <input
+          type="text"
+          value={addressInstructions}
+          onChange={(e) => onChange('addressInstructions', e.target.value)}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
+          placeholder="Apt/Suite"
+          maxLength={10}
+        />
       </div>
 
       <DatePickerField
@@ -66,6 +80,7 @@ export default function DeliveryForm({
           onChange={(e) => onChange('deliveryInstructions', e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
           placeholder="Delivery instructions..."
+          maxLength={300}
         />
       </div>
 
@@ -96,10 +111,8 @@ export default function DeliveryForm({
             className="mt-1 w-5 h-5 text-rose-600 rounded"
           />
           <span className="text-sm text-gray-700">
-            I acknowledge that @fauxlowers.byjz will reach out to me to confirm my delivery date and time, 
-            as well as communicate with me during the time of the delivery. Cancel at least 24 hours before 
-            designated appointment time. Failure to deliver more than once will result in forfeiture of 
-            the items and a partial refund. <span className="text-red-500">*</span>
+            I acknowledge that @fauxlowers.byjz will reach out to me to confirm my delivery date and time.
+            <span className="text-red-500">*</span>
           </span>
         </label>
       </div>

@@ -36,6 +36,7 @@ export default function PickupForm({
           onChange={(e) => onChange('pickupName', e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
           placeholder="Name for pickup"
+          maxLength={50}
         />
       </div>
 
@@ -73,6 +74,7 @@ export default function PickupForm({
           onChange={(e) => onChange('pickupInstructions', e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
           placeholder="Any special instructions..."
+          maxLength={300}
         />
       </div>
 

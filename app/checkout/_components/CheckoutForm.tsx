@@ -105,6 +105,7 @@ export default function CheckoutForm({ orderData }: Props) {
       case 'deliveryAddress': setDeliveryAddress(value); break
       case 'deliveryDate': setDeliveryDate(value); break
       case 'deliveryInstructions': setDeliveryInstructions(value); break
+      case 'addressInstructions': setAddressInstruction(value); break
       case 'onGroundsHousing': setOnGroundsHousing(value); break
     }
   }
@@ -350,6 +351,7 @@ export default function CheckoutForm({ orderData }: Props) {
                     deliveryAddress={deliveryAddress}
                     deliveryDate={deliveryDate}
                     deliveryInstructions={deliveryInstructions}
+                    addressInstructions={deliveryInstructions}
                     onGroundsHousing={onGroundsHousing}
                     onChange={handleDeliveryChange}
                     orderType={orderData.type}
@@ -467,3 +469,11 @@ export default function CheckoutForm({ orderData }: Props) {
     </main>
   )
 }
+function setAddressInstruction(value: string) {
+  setDeliveryInstructions(value);
+}
+
+function setDeliveryInstructions(value: string) {
+  setDeliveryInstructions(value);
+}
+
