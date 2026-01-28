@@ -29,10 +29,10 @@ type CartItem = {
 
 type Props = {
   flowerTypes: FlowerType[]
-  // Removed colorOptions from Props
+  colorOptions: any[]; // Replace `any[]` with the actual type if available
 }
 
-export default function IndividualFlowerSelector({ flowerTypes }: Props) {
+export default function IndividualFlowerSelector({ flowerTypes, colorOptions }: Props) {
   const router = useRouter()
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedFlower, setSelectedFlower] = useState<FlowerType | null>(null)
