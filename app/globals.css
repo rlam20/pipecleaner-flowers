@@ -1,10 +1,13 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import "tailwindcss";
 
 :root {
   --background: #fafaf9; /* Stone-50 */
-  --foreground: #18181b; /* Zinc-900 */
+  --foreground: #18181b; /* Zinc-900 for high contrast */
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
 }
 
 body {

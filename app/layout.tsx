@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Merriweather } from "next/font/google"; // Use the optimizer
+import { Merriweather } from "next/font/google";
 import "./globals.css";
 
-// 1. Configure the font securely
+// 1. Configure the font
 const merriweather = Merriweather({
   subsets: ["latin"],
   weight: ["300", "400", "700", "900"],
-  variable: "--font-merriweather", // Adds a CSS variable
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -14,11 +14,12 @@ export const metadata: Metadata = {
   description: "Custom hand-crafted bouquets",
 };
 
-// 2. Explicitly set the viewport to prevent zooming issues
+// 2. THIS FIXES THE SCALE ISSUE ON VERCEL/MOBILE
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -28,10 +29,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body 
-        // 3. Apply the font class + Tailwind utilities
-        className={`${merriweather.className} antialiased bg-stone-50 text-zinc-900`}
-      >
+      {/* 3. Apply the font class directly */}
+      <body className={`${merriweather.className} antialiased bg-stone-50 text-zinc-900`}>
         {children}
       </body>
     </html>
