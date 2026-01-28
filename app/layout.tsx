@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 // 2. ADD THIS SECTION
 // This tells the browser: "The width of this page is the width of the device screen."
 export const viewport: Viewport = {
-  width: "device-width",
+  width: 0.5,
   initialScale: 0.5,
 };
 
