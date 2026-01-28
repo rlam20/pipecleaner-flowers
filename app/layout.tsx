@@ -14,6 +14,12 @@ export const metadata: Metadata = {
   description: "Custom hand-crafted bouquets",
 };
 
+// 2. ADD THIS SECTION
+// This tells the browser: "The width of this page is the width of the device screen."
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 0.5,
+};
 
 export default function RootLayout({
   children,
