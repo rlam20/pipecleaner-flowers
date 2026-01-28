@@ -2,8 +2,20 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import type { FlowerType, ColorOption } from '@/lib/types'
-import Image from 'next/image'
+import type { FlowerType } from '@/lib/types'
+// Removed ColorOption from imports as we are defining the shape locally or strictly using the constant
+
+// 1. Defined the Color Menu Constant
+const COLOR_MENU = [
+  { id: 'PK1', name: 'Light Pink', hex: '#FEB6BC' },
+  { id: 'PK2', name: 'Rouge Pink', hex: '#F2789F' },
+  { id: 'PK3', name: 'Deep Pink', hex: '#CA4057' },
+  { id: 'PK4', name: 'Peach Pink', hex: '#FC4A3C' },
+  { id: 'RD1', name: 'Apple Red', hex: '#BD0001' },
+  { id: 'RD2', name: 'Currant Red', hex: '#8F0203' },
+  { id: 'RD3', name: 'Sangria Red', hex: '#500102' },
+  { id: 'RD4', name: 'Mahogany Red', hex: '#330100' },
+]
 
 type CartItem = {
   id: string
@@ -17,10 +29,10 @@ type CartItem = {
 
 type Props = {
   flowerTypes: FlowerType[]
-  colorOptions: ColorOption[]
+  // Removed colorOptions from Props
 }
 
-export default function IndividualFlowerSelector({ flowerTypes, colorOptions }: Props) {
+export default function IndividualFlowerSelector({ flowerTypes }: Props) {
   const router = useRouter()
   const [cart, setCart] = useState<CartItem[]>([])
   const [selectedFlower, setSelectedFlower] = useState<FlowerType | null>(null)
@@ -31,25 +43,27 @@ export default function IndividualFlowerSelector({ flowerTypes, colorOptions }: 
     setShowColorModal(true)
   }
 
-  const handleColorSelect = (color: ColorOption) => {
+  // Updated to accept the shape of an item from COLOR_MENU
+  const handleColorSelect = (color: typeof COLOR_MENU[0]) => {
     if (!selectedFlower) return
 
-    const price = selectedFlower.base_price + color.price_modifier
-    
+    // 2. Updated Price Logic: 
+    // The new list doesn't have price_modifier, so we just use base_price.
+    const price = selectedFlower.base_price
+
     // Check if this exact combo already exists in cart
     const existingIndex = cart.findIndex(
       item => item.flower_type_id === selectedFlower.id && item.color_id === color.id
     )
 
     if (existingIndex >= 0) {
-      // Increment quantity
       const newCart = [...cart]
       newCart[existingIndex].quantity += 1
       setCart(newCart)
     } else {
-      // Add new item
       const newItem: CartItem = {
-id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,        flower_type_id: selectedFlower.id,
+        id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        flower_type_id: selectedFlower.id,
         flower_name: selectedFlower.name,
         color_id: color.id,
         color_name: color.name,
@@ -191,18 +205,24 @@ id: `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,        flower_ty
               Choose color for {selectedFlower.name}
             </h3>
             <div className="grid grid-cols-2 gap-3 mb-4">
-              {colorOptions.map((color) => (
+              {/* 3. Mapped over COLOR_MENU instead of props */}
+              {COLOR_MENU.map((color) => (
                 <button
                   key={color.id}
                   onClick={() => handleColorSelect(color)}
-                  className="p-3 border-2 border-gray-200 rounded-lg hover:border-rose-400 hover:bg-rose-50 transition-all text-left"
+                  className="p-3 border-2 border-gray-200 rounded-lg hover:border-rose-400 hover:bg-rose-50 transition-all text-left flex items-center gap-3"
                 >
-                  <div className="font-medium">{color.name}</div>
-                  <div className="text-sm text-gray-600">
-                    ${(selectedFlower.base_price + color.price_modifier).toFixed(2)}
-                    {color.price_modifier > 0 && (
-                      <span className="text-rose-600"> (+${color.price_modifier.toFixed(2)})</span>
-                    )}
+                  {/* Added Visual Swatch */}
+                  <div 
+                    className="w-8 h-8 rounded-full border border-gray-200 shadow-sm flex-shrink-0" 
+                    style={{ backgroundColor: color.hex }}
+                  />
+                  
+                  <div>
+                    <div className="font-medium text-sm">{color.name}</div>
+                    <div className="text-xs text-gray-600">
+                      ${selectedFlower.base_price.toFixed(2)}
+                    </div>
                   </div>
                 </button>
               ))}

@@ -8,15 +8,21 @@ import type { FlowerType } from '@/lib/types' // Import shared types
 // Removed hardcoded FLOWER_MENU
 
 const COLOR_MENU = [
-  { id: 'PK1', name: 'Light Pink', hex: '#FFC0CB' },
-  { id: 'PK2', name: 'Pink', hex: '#FF69B4' },
-  { id: 'PK3', name: 'Deep Pink', hex: '#C71585' },
-  { id: 'PK4', name: 'Peach Pink', hex: '#FF7F50' },
-  { id: 'RD1', name: 'Red', hex: '#FF0000' },
-  { id: 'RD2', name: 'Dark Red', hex: '#8B0000' },
-  { id: 'RD3', name: 'Burgundy', hex: '#800020' },
-  { id: 'RD4', name: 'Deep Burgundy', hex: '#4A0404' },
+  { id: 'PK1', name: 'Light Pink', hex: '#FEB6BC' },
+  { id: 'PK2', name: 'Pink', hex: '#F2789F' },
+  { id: 'PK3', name: 'Deep Pink', hex: '#CA4057' },
+  { id: 'PK4', name: 'Peach Pink', hex: '#FC4A3C' },
+  { id: 'RD1', name: 'Red', hex: '#BD0001' },
+  { id: 'RD2', name: 'Dark Red', hex: '#8F0203' },
+  { id: 'RD3', name: 'Burgundy', hex: '#500102' },
+  { id: 'RD4', name: 'Deep Burgundy', hex: '#330100' },
 ]
+
+// PK3 - #cb445c
+// PK4 - #fd3b2c
+// RD2 - #820102
+// RD3 - #6c0002
+
 
 type SelectedFlower = {
   id: string 
@@ -96,12 +102,10 @@ export default function CustomBuilder({ flowerTypes }: Props) {
   const [quantityInput, setQuantityInput] = useState('')
 
   const MIN_FLOWERS = 2
-  const MAX_FLOWERS = 50
+  const MAX_FLOWERS = 15
   const totalFlowers = state.flowers.reduce((sum, f) => sum + f.quantity, 0)
   const canCheckout = totalFlowers >= MIN_FLOWERS
   const canAddMore = totalFlowers < MAX_FLOWERS
-
-  // ... [Keep existing handleQuantityInputChange, getQuantityValue, handleUpdateFlowerQuantity functions] ...
   
   const handleQuantityInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -194,7 +198,7 @@ export default function CustomBuilder({ flowerTypes }: Props) {
         </section>
 
         {/* ... [Keep Add-ons Section] ... */}
-        <section className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm">
+        {/* <section className="bg-white p-8 rounded-2xl border border-stone-200 shadow-sm">
           <h2 className="text-3xl font-bold mb-6 text-stone-800">Add-ons</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <button 
@@ -222,7 +226,7 @@ export default function CustomBuilder({ flowerTypes }: Props) {
               <span className="text-xl text-rose-600 font-bold">+$2.00</span>
             </button>
           </div>
-        </section>
+        </section> */}
 
       </div>
 
@@ -231,6 +235,9 @@ export default function CustomBuilder({ flowerTypes }: Props) {
         <div className="bg-white p-8 rounded-2xl border border-stone-200 shadow-xl sticky top-6">
           <h2 className="text-2xl font-bold mb-6 border-b pb-4">Your Bouquet</h2>
           
+          <p className="text-xs text-stone-500 mb-6 italic">
+            All bouquets come wrapped with paper and filled with extra paper for protection
+          </p>
           <div className="h-[50vh] overflow-y-auto pr-2 mb-8">
             <div className="space-y-3">
               {state.flowers.length === 0 && (
@@ -361,14 +368,12 @@ export default function CustomBuilder({ flowerTypes }: Props) {
                 <input 
                   type="text"
                   inputMode="numeric"
-                  placeholder="Enter quantity (max 20)"
+                  placeholder="Enter quantity"
                   value={quantityInput}
                   onChange={handleQuantityInputChange}
                   className="w-full px-4 py-3 border-2 border-rose-300 rounded-lg focus:border-rose-500 focus:outline-none font-bold text-lg text-center"
                 />
-                <p className="text-xs text-stone-600 mt-2">
-                  {MAX_FLOWERS - totalFlowers} flowers remaining • Max 20 per selection
-                </p>
+            
               </div>
 
               <div className="flex-1 overflow-y-auto">

@@ -71,7 +71,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ o
             <div className="space-y-4">
               <div className="bg-rose-50 rounded-lg p-4">
                 <p className="font-medium mb-2">Send payment via Venmo:</p>
-                <p className="text-2xl font-bold text-rose-600 mb-2">@juzoai</p>
+                <p className="text-2xl font-bold text-rose-600 mb-2">@juzaoi</p>
                 <p className="text-sm text-gray-600">
                   Please include your order number ({order.order_number}) in the payment note.
                 </p>

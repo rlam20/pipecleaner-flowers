@@ -6,7 +6,7 @@ export default async function IndividualFlowersPage() {
   const supabase = await createClient()
   
   const { data: flowerTypes } = await supabase
-    .from('flower_types')
+    .from('flower_types_individual')
     .select('*')
     .order('name')
 

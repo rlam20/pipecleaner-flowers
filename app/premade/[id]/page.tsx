@@ -32,10 +32,11 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ i
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative h-96 lg:h-full min-h-[400px]">
               <Image
-                src={bundle.image_url}
+                src="/flowers/silhouette.jpg"
                 alt={bundle.name}
                 fill
-                className="object-cover"
+                /* p-12 adds a large margin (padding) inside the box */
+                className="object-contain p-12"
               />
             </div>
           </div>

@@ -35,7 +35,7 @@ export default async function PresetBundlesPage() {
                 href={`/premade/${bundle.id}`}
                 className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-xl transition-shadow group"
               >
-                <div className="relative h-64 bg-gray-100">
+                {/* <div className="relative h-64 bg-gray-100">
                   <Image
                     src={bundle.image_url}
                     alt={bundle.name}
@@ -43,7 +43,7 @@ export default async function PresetBundlesPage() {
                     className="object-cover group-hover:scale-105 transition-transform duration-300"
                   />
                 </div>
-                
+                 */}
                 <div className="p-5">
                   <h3 className="text-xl font-semibold text-gray-900 mb-2">
                     {bundle.name}
