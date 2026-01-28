@@ -72,11 +72,12 @@ function selectorReducer(state: SelectorState, action: SelectorAction): Selector
   }
 }
 
-type Props = {
+interface Props {
   flowerTypes: FlowerType[]
+  colorOptions: any[]
 }
 
-export default function IndividualFlowerSelector({ flowerTypes }: Props) {
+export default function IndividualFlowerSelector({ flowerTypes, colorOptions }: Props) {
   const router = useRouter()
   const [state, dispatch] = useReducer(selectorReducer, {
     items: []
