@@ -1,4 +1,4 @@
-import type { Metadata, Viewport } from "next"; // 1. Import Viewport type
+import type { Metadata, Viewport } from "next";
 import { Merriweather } from "next/font/google";
 import "./globals.css";
 
@@ -14,11 +14,9 @@ export const metadata: Metadata = {
   description: "Custom hand-crafted bouquets",
 };
 
-// 2. ADD THIS SECTION
-// This tells the browser: "The width of this page is the width of the device screen."
 export const viewport: Viewport = {
-  width: 0.5,
-  initialScale: 0.5,
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({
@@ -28,6 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className={`${merriweather.className} antialiased bg-stone-50 text-zinc-900`}>
         {children}
       </body>
