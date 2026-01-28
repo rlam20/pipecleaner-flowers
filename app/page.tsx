@@ -20,7 +20,7 @@ export default function Home() {
             Build <br/> Custom <br/> Bouquets
           </h2>
           
-          <p className="absolute bottom-1/4 translate-y-9 text-xl md:text-2xl text-center max-w-md opacity-0 group-hover:opacity-100 transition-all duration-500">
+          <p className="absolute bottom-1/3 translate-y-10 text-xl md:text-2xl text-center max-w-md opacity-0 group-hover:opacity-100 transition-all duration-500">
             Choose the flowers you want to put in your bouquet, and how big you want your bouquet to be!
           </p>
         </div>
@@ -46,7 +46,7 @@ export default function Home() {
             Shop <br/> Premade <br/> Bundles
           </h2>
 
-          <p className="absolute bottom-1/4 translate-y-1 text-xl md:text-2xl text-center max-w-md opacity-0 group-hover:opacity-100 transition-all duration-500">
+          <p className="absolute bottom-1/3 translate-y-1 text-xl md:text-2xl text-center max-w-md opacity-0 group-hover:opacity-100 transition-all duration-500">
             Browse our curated flower bundle collections, ready to order!
           </p>
         </div>

@@ -1,9 +1,5 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
-import Script from "next/script"; // <--- Import Script
 import "./globals.css";
-
-const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Pipecleaner Flowers",
@@ -17,14 +13,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased bg-stone-50 text-zinc-900`}>
-        {children}
-        
-        {/* ADD THIS SCRIPT TAG */}
-        <Script
-          src={`https://maps.googleapis.com/maps/api/js?key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}&libraries=places`}
-          strategy="beforeInteractive"
+      <head>
+        {/* Add the Google Font link here */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Merriweather:ital,opsz,wght@0,18..144,300..900;1,18..144,300..900&display=swap"
+          rel="stylesheet"
         />
+      </head>
+      <body className="antialiased bg-stone-50 text-zinc-900" style={{ fontFamily: "'Merriweather', serif" }}>
+        {children}
       </body>
     </html>
   );

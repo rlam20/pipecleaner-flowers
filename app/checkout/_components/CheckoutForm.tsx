@@ -44,11 +44,12 @@ export default function CheckoutForm({ orderData }: Props) {
 
   // Delivery details
   const [deliveryAddress, setDeliveryAddress] = useState('')
+  const [addressInstructions, setAddressInstructions] = useState('') // <--- FIXED: Added missing state
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
   const [onGroundsHousing, setOnGroundsHousing] = useState(false)
 
-  // Add-ons (Removed 'wrapped')
+  // Add-ons
   const [addons, setAddons] = useState<OrderAddons>({
     pocky: false,
     vase: false,
@@ -61,32 +62,19 @@ export default function CheckoutForm({ orderData }: Props) {
       [name]: value
     })
 
-    // Real-time validation for phone and email
     if (name === 'customer_phone') {
       if (value && !isValidPhoneOrInstagram(value)) {
-        setErrors(prev => ({
-          ...prev,
-          customer_phone: 'Enter a valid phone number or Instagram handle'
-        }))
+        setErrors(prev => ({ ...prev, customer_phone: 'Enter a valid phone number or Instagram handle' }))
       } else {
-        setErrors(prev => ({
-          ...prev,
-          customer_phone: ''
-        }))
+        setErrors(prev => ({ ...prev, customer_phone: '' }))
       }
     }
 
     if (name === 'customer_email') {
       if (value && !isValidEmail(value)) {
-        setErrors(prev => ({
-          ...prev,
-          customer_email: 'Enter a valid email address'
-        }))
+        setErrors(prev => ({ ...prev, customer_email: 'Enter a valid email address' }))
       } else {
-        setErrors(prev => ({
-          ...prev,
-          customer_email: ''
-        }))
+        setErrors(prev => ({ ...prev, customer_email: '' }))
       }
     }
   }
@@ -103,9 +91,9 @@ export default function CheckoutForm({ orderData }: Props) {
   const handleDeliveryChange = (field: string, value: any) => {
     switch (field) {
       case 'deliveryAddress': setDeliveryAddress(value); break
+      case 'addressInstructions': setAddressInstructions(value); break // <--- FIXED: Uses the state setter now
       case 'deliveryDate': setDeliveryDate(value); break
       case 'deliveryInstructions': setDeliveryInstructions(value); break
-      case 'addressInstructions': setAddressInstruction(value); break
       case 'onGroundsHousing': setOnGroundsHousing(value); break
     }
   }
@@ -131,15 +119,9 @@ export default function CheckoutForm({ orderData }: Props) {
 
   const calculateTotal = () => {
     let total = getSubtotal()
-    
-    // Add-ons
     if (addons.pocky) total += 1.50
     if (addons.vase) total += 2.00
-    // Removed wrapping fee calculation
-    
-    // Delivery fee
     total += calculateDeliveryFee()
-    
     return total
   }
 
@@ -151,20 +133,8 @@ export default function CheckoutForm({ orderData }: Props) {
       return
     }
 
-    // Validate phone number or Instagram handle
     if (!isValidPhoneOrInstagram(formData.customer_phone)) {
-      alert('Please enter a valid phone number (e.g., (555) 123-4567) or Instagram handle (e.g., @yourhandle)')
-      return
-    }
-
-    // Validate email if provided
-    if (formData.customer_email && !isValidEmail(formData.customer_email)) {
-      alert('Please enter a valid email address')
-      return
-    }
-
-    if (!fulfillmentMethod) {
-      alert('Please select pickup or delivery')
+      alert('Please enter a valid phone number or Instagram handle')
       return
     }
 
@@ -173,11 +143,14 @@ export default function CheckoutForm({ orderData }: Props) {
         alert('Please complete all pickup details')
         return
       }
-    } else {
+    } else if (fulfillmentMethod === 'delivery') {
       if (!deliveryAddress || !deliveryDate) {
         alert('Please complete all delivery details')
         return
       }
+    } else {
+        alert('Please select pickup or delivery')
+        return
     }
 
     setLoading(true)
@@ -203,28 +176,29 @@ export default function CheckoutForm({ orderData }: Props) {
         total_price: calculateTotal()
       }
 
-      // Pickup specific
       if (fulfillmentMethod === 'pickup') {
         orderInput.pickup_name = pickupName
         orderInput.pickup_location = pickupLocation
         orderInput.pickup_instructions = pickupInstructions || undefined
       }
 
-      // Delivery specific
       if (fulfillmentMethod === 'delivery') {
-        orderInput.delivery_address = deliveryAddress
+        // Combine address and apt/suite
+        const fullAddress = addressInstructions 
+            ? `${deliveryAddress}, ${addressInstructions}` 
+            : deliveryAddress
+
+        orderInput.delivery_address = fullAddress
         orderInput.delivery_instructions = deliveryInstructions || undefined
         orderInput.on_grounds_housing = onGroundsHousing
       }
 
-      // Bundle or custom data
       if (orderData.type === 'bundle') {
         orderInput.preset_bundle_id = orderData.bundleId
         orderInput.selected_theme = orderData.theme
       } else {
         orderInput.custom_bouquet = {
           flowers: orderData.flowers,
-          // Updated to remove 'wrapped' and reflect current addons
           addons: { pocky: addons.pocky, vase: addons.vase },
           total_price: orderData.total_price
         }
@@ -259,7 +233,6 @@ export default function CheckoutForm({ orderData }: Props) {
         </div>
 
         <form onSubmit={handleSubmit} className="grid lg:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          {/* Left: Form */}
           <div className="lg:col-span-2 space-y-8">
             {/* Customer Info */}
             <div className="bg-white rounded-lg shadow-md p-6">
@@ -280,7 +253,6 @@ export default function CheckoutForm({ orderData }: Props) {
                     onChange={handleChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:border-transparent"
                   />
-                  <p className="text-xs text-gray-500 mt-1">{formData.customer_name.length}/50</p>
                 </div>
 
                 <div>
@@ -351,7 +323,7 @@ export default function CheckoutForm({ orderData }: Props) {
                     deliveryAddress={deliveryAddress}
                     deliveryDate={deliveryDate}
                     deliveryInstructions={deliveryInstructions}
-                    addressInstructions={deliveryInstructions}
+                    addressInstructions={addressInstructions} // <--- FIXED: Now passes correct state
                     onGroundsHousing={onGroundsHousing}
                     onChange={handleDeliveryChange}
                     orderType={orderData.type}
@@ -384,6 +356,7 @@ export default function CheckoutForm({ orderData }: Props) {
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
               <h2 className="text-2xl font-semibold mb-4">Order Summary</h2>
               
+              {/* Bundle Summary */}
               {orderData.type === 'bundle' && (
                 <div className="space-y-3 mb-4">
                   <div className="pb-3 border-b">
@@ -394,6 +367,7 @@ export default function CheckoutForm({ orderData }: Props) {
                 </div>
               )}
 
+               {/* Custom Summary */}
               {orderData.type === 'custom' && (
                 <div className="space-y-2 mb-4 pb-4 border-b">
                   <div className="font-medium mb-2">Custom Bouquet:</div>
@@ -406,6 +380,7 @@ export default function CheckoutForm({ orderData }: Props) {
                 </div>
               )}
 
+              {/* Individual Summary */}
               {orderData.type === 'individual' && (
                 <div className="space-y-2 mb-4 pb-4 border-b">
                   <div className="font-medium mb-2">Individual Flowers:</div>
@@ -445,9 +420,6 @@ export default function CheckoutForm({ orderData }: Props) {
                       {calculateDeliveryFee() === 0 ? 'FREE' : `$${calculateDeliveryFee().toFixed(2)}`}
                     </span>
                   </div>
-                  {getSubtotal() >= 25 && calculateDeliveryFee() === 0 && (
-                    <p className="text-xs text-green-600 mt-1">Free delivery for orders $25+</p>
-                  )}
                 </div>
               )}
 
@@ -469,11 +441,3 @@ export default function CheckoutForm({ orderData }: Props) {
     </main>
   )
 }
-function setAddressInstruction(value: string) {
-  setDeliveryInstructions(value);
-}
-
-function setDeliveryInstructions(value: string) {
-  setDeliveryInstructions(value);
-}
-
