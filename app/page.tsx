@@ -2,7 +2,7 @@ import Link from 'next/link'
 
 export default function Home() {
   return (
-    <main className="h-screen w-screen overflow-hidden flex">
+<main className="min-h-[100svh] w-full flex">
       {/* Custom Bouquets - Left Side */}
       <Link 
         href="/custom"
