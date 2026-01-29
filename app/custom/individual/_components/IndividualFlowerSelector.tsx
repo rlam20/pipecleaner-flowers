@@ -13,7 +13,7 @@ const COLOR_MENU = [
   { id: 'RD1', name: 'Red', hex: '#BD0001' },
   { id: 'RD2', name: 'Dark Red', hex: '#8F0203' },
   { id: 'RD3', name: 'Burgundy', hex: '#500102' },
-  { id: 'RD4', name: 'Deep Burgundy', hex: '#330100' },
+  { id: 'RD4', name: 'Deep Burgundy', hex: '#1E0007' },
 ]
 
 type SelectedItem = {

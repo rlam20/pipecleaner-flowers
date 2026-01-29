@@ -1,14 +1,17 @@
 @import "tailwindcss";
 
 html {
-  font-size: 10.67px; /* 16px * 0.67 = 10.67px */
+  /* MIN: 14px (legible on mobile, prevents iOS zoom)
+     VAL: 1.2vw (scales relative to screen width for consistency)
+     MAX: 18px (stops it from getting cartoonishly huge on big screens)
+  */
+  font-size: clamp(14px, 1.2vw, 18px); 
 }
 
 :root {
   --background: #fafaf9;
   --foreground: #18181b;
 }
-
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
