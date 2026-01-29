@@ -44,7 +44,7 @@ export default function FulfillmentMethodSelector({ selected, onSelect, subtotal
           </p>
           <div className="text-lg font-bold text-green-600">FREE</div>
           <p className="text-xs text-gray-500 mt-2">
-            Generally available weekdays 3-5:50pm (except Wed), Friday most times
+            Generally available weekdays 3-5:50pm (except Wednesday)
           </p>
         </button>
 
@@ -77,9 +77,7 @@ export default function FulfillmentMethodSelector({ selected, onSelect, subtotal
               <span>+${deliveryFee.toFixed(2)}</span>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-2">
-            Generally available weekdays 8pm-12am, Friday most times
-          </p>
+ 
         </button>
       </div>
     </div>

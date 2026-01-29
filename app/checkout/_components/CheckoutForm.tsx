@@ -44,7 +44,7 @@ export default function CheckoutForm({ orderData }: Props) {
 
   // Delivery details
   const [deliveryAddress, setDeliveryAddress] = useState('')
-  const [addressInstructions, setAddressInstructions] = useState('') // <--- FIXED: Added missing state
+  const [addressInstructions, setAddressInstructions] = useState('')
   const [deliveryDate, setDeliveryDate] = useState<Date | null>(null)
   const [deliveryInstructions, setDeliveryInstructions] = useState('')
   const [onGroundsHousing, setOnGroundsHousing] = useState(false)
@@ -91,7 +91,7 @@ export default function CheckoutForm({ orderData }: Props) {
   const handleDeliveryChange = (field: string, value: any) => {
     switch (field) {
       case 'deliveryAddress': setDeliveryAddress(value); break
-      case 'addressInstructions': setAddressInstructions(value); break // <--- FIXED: Uses the state setter now
+      case 'addressInstructions': setAddressInstructions(value); break
       case 'deliveryDate': setDeliveryDate(value); break
       case 'deliveryInstructions': setDeliveryInstructions(value); break
       case 'onGroundsHousing': setOnGroundsHousing(value); break
@@ -323,7 +323,7 @@ export default function CheckoutForm({ orderData }: Props) {
                     deliveryAddress={deliveryAddress}
                     deliveryDate={deliveryDate}
                     deliveryInstructions={deliveryInstructions}
-                    addressInstructions={addressInstructions} // <--- FIXED: Now passes correct state
+                    addressInstructions={addressInstructions}
                     onGroundsHousing={onGroundsHousing}
                     onChange={handleDeliveryChange}
                     orderType={orderData.type}
@@ -367,14 +367,16 @@ export default function CheckoutForm({ orderData }: Props) {
                 </div>
               )}
 
-               {/* Custom Summary */}
+               {/* Custom Summary - FIXED QUANTITY DISPLAY */}
               {orderData.type === 'custom' && (
                 <div className="space-y-2 mb-4 pb-4 border-b">
                   <div className="font-medium mb-2">Custom Bouquet:</div>
                   {orderData.flowers.map((flower: any, index: number) => (
                     <div key={index} className="text-sm flex justify-between">
-                      <span>{flower.flower_name} ({flower.color_name})</span>
-                      <span>${flower.price.toFixed(2)}</span>
+                      {/* Added quantity multiplier */}
+                      <span>{flower.quantity}x {flower.flower_name} ({flower.color_name})</span>
+                      {/* Calculated total price for the quantity */}
+                      <span>${(flower.price * flower.quantity).toFixed(2)}</span>
                     </div>
                   ))}
                 </div>
