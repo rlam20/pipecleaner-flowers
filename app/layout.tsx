@@ -2,12 +2,11 @@ import type { Metadata, Viewport } from "next";
 import { Merriweather } from "next/font/google";
 import "./globals.css";
 
-// 1. Optimize the font (Replacing the manual <link> tags)
 const merriweather = Merriweather({
   subsets: ["latin"],
   weight: ["300", "400", "700", "900"],
   display: "swap",
-  variable: "--font-merriweather",
+  variable: "--font-merriweather", 
 });
 
 export const metadata: Metadata = {
@@ -15,8 +14,6 @@ export const metadata: Metadata = {
   description: "Custom hand-crafted bouquets",
 };
 
-// 2. THE CRITICAL FIX: Viewport Configuration
-// This forces the browser to match the device width (fixing the 67% zoom issue)
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -29,7 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      {/* 3. Apply the font class directly to the body */}
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+      </head>
       <body className={`${merriweather.className} antialiased bg-stone-50 text-zinc-900`}>
         {children}
       </body>
