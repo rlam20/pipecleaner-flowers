@@ -317,42 +317,43 @@ export default function CustomBuilder({ flowerTypes }: Props) {
         </div>
       </aside>
 
+// ... existing code ...
       {/* MODAL */}
       {showModal && activeType && (
-        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 md:p-8">
-          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[90vh]">
+        <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-8">
+          <div className="bg-white rounded-3xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col md:flex-row max-h-[95vh] md:max-h-[90vh]">
             
             {/* LEFT SIDE: Image - UPDATED TO USE DB IMAGE */}
-            <div className="w-full md:w-1/2 bg-gradient-to-br from-rose-50 to-pink-50 p-8 flex items-center justify-center relative">
-              <div className="w-full aspect-square bg-white/50 backdrop-blur rounded-2xl flex flex-col items-center justify-center shadow-inner overflow-hidden relative">
+            <div className="w-full md:w-1/2 bg-gradient-to-br from-rose-50 to-pink-50 p-4 md:p-8 flex items-center justify-center relative h-48 md:h-auto shrink-0">
+              <div className="w-full h-full md:aspect-square bg-white/50 backdrop-blur rounded-2xl flex flex-col items-center justify-center shadow-inner overflow-hidden relative">
                  {activeType.image_url ? (
                     <Image 
                       src={`/flowers/${activeType.image_url}`}
                       alt={activeType.name}
                       fill
-                      className="object-cover"
+                      className="object-contain md:object-cover p-2 md:p-0"
                     />
                  ) : (
                     <>
-                      <span className="text-8xl mb-4">🌸</span>
-                      <span className="text-2xl font-bold text-stone-700">{activeType.name}</span>
+                      <span className="text-6xl md:text-8xl mb-2 md:mb-4">🌸</span>
+                      <span className="text-xl md:text-2xl font-bold text-stone-700">{activeType.name}</span>
                     </>
                  )}
               </div>
               <button 
                 onClick={() => setShowModal(false)}
-                className="md:hidden absolute top-4 right-4 w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-md font-bold text-stone-500"
+                className="md:hidden absolute top-3 right-3 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md font-bold text-stone-500 z-10"
               >
                 ✕
               </button>
             </div>
 
             {/* RIGHT SIDE: Color Selection */}
-            <div className="w-full md:w-1/2 p-8 md:p-12 flex flex-col">
-              <div className="flex justify-between items-start mb-6">
+            <div className="w-full md:w-1/2 p-5 md:p-12 flex flex-col h-full overflow-hidden">
+              <div className="flex justify-between items-start mb-4 md:mb-6 shrink-0">
                 <div>
-                  <h3 className="text-3xl font-black text-stone-900">{activeType.name}</h3>
-                  <p className="text-xl text-rose-600 font-bold mt-2">${activeType.base_price.toFixed(2)}</p>
+                  <h3 className="text-2xl md:text-3xl font-black text-stone-900">{activeType.name}</h3>
+                  <p className="text-lg md:text-xl text-rose-600 font-bold mt-1 md:mt-2">${activeType.base_price.toFixed(2)}</p>
                 </div>
                 <button 
                   onClick={() => setShowModal(false)} 
@@ -363,22 +364,22 @@ export default function CustomBuilder({ flowerTypes }: Props) {
               </div>
 
               {/* ... [Keep Quantity Input] ... */}
-              <div className="mb-6 bg-rose-50 p-4 rounded-xl">
-                <label className="block text-sm font-bold text-stone-700 mb-2">Quantity</label>
+              <div className="mb-4 md:mb-6 bg-rose-50 p-3 md:p-4 rounded-xl shrink-0">
+                <label className="block text-sm font-bold text-stone-700 mb-1 md:mb-2">Quantity</label>
                 <input 
                   type="text"
                   inputMode="numeric"
                   placeholder="Enter quantity"
                   value={quantityInput}
                   onChange={handleQuantityInputChange}
-                  className="w-full px-4 py-3 border-2 border-rose-300 rounded-lg focus:border-rose-500 focus:outline-none font-bold text-lg text-center"
+                  className="w-full px-3 py-2 md:px-4 md:py-3 border-2 border-rose-300 rounded-lg focus:border-rose-500 focus:outline-none font-bold text-lg text-center"
                 />
             
               </div>
 
-              <div className="flex-1 overflow-y-auto">
-                <p className="text-stone-500 font-medium mb-4 uppercase tracking-wide text-sm">Select a Color</p>
-                <div className="grid grid-cols-2 gap-4">
+              <div className="flex-1 overflow-y-auto min-h-0">
+                <p className="text-stone-500 font-medium mb-3 md:mb-4 uppercase tracking-wide text-xs md:text-sm">Select a Color</p>
+                <div className="grid grid-cols-2 gap-2 md:gap-4 pb-4">
                   {COLOR_MENU.map(c => (
                     <button 
                       key={c.id} 
@@ -402,15 +403,15 @@ export default function CustomBuilder({ flowerTypes }: Props) {
                         setShowModal(false)
                         setQuantityInput('')
                       }} 
-                      className="group flex items-center gap-3 p-3 rounded-xl border-2 border-transparent hover:border-rose-300 hover:bg-rose-50 transition-all text-left"
+                      className="group flex items-center gap-2 md:gap-3 p-2 md:p-3 rounded-xl border-2 border-transparent hover:border-rose-300 hover:bg-rose-50 transition-all text-left"
                     >
                       <div 
-                        className="w-10 h-10 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform shrink-0" 
+                        className="w-8 h-8 md:w-10 md:h-10 rounded-full border-2 border-white shadow-md group-hover:scale-110 transition-transform shrink-0" 
                         style={{ backgroundColor: c.hex }} 
                       />
                       <div className="flex-1 min-w-0">
                         <span className="block font-bold text-stone-800 text-sm truncate">{c.name}</span>
-                        <span className="text-xs text-stone-400 font-mono">{c.id}</span>
+                        <span className="text-[10px] md:text-xs text-stone-400 font-mono">{c.id}</span>
                       </div>
                     </button>
                   ))}
