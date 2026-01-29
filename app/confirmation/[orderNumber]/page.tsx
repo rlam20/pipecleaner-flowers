@@ -91,7 +91,7 @@ export default async function ConfirmationPage({ params }: { params: Promise<{ o
               Back to Home
             </Link>
             <p className="text-sm text-gray-600">
-              Questions? Text us at (757) 333-2559
+              Questions? Text us at @fauxlowers.byjz
             </p>
           </div>
         </div>
