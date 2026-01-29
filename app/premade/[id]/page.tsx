@@ -32,7 +32,7 @@ export default async function BundleDetailPage({ params }: { params: Promise<{ i
           <div className="bg-white rounded-lg shadow-md overflow-hidden">
             <div className="relative h-96 lg:h-full min-h-[400px]">
               <Image
-                src="/flowers/silhouette.jpg"
+                src="/flowers/placeholder-bundle.jpg"
                 alt={bundle.name}
                 fill
                 /* p-12 adds a large margin (padding) inside the box */
