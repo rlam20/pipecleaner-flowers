@@ -317,7 +317,6 @@ export default function CustomBuilder({ flowerTypes }: Props) {
         </div>
       </aside>
 
-// ... existing code ...
       {/* MODAL */}
       {showModal && activeType && (
         <div className="fixed inset-0 bg-stone-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-2 md:p-8">
