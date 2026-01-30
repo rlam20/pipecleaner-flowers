@@ -41,7 +41,7 @@ type CreateOrderInput = {
 export async function createOrder(input: CreateOrderInput) {
   const supabase = await createClient()
 
-  // Validate required fields
+  // 1. Validation
   if (!input.customer_name || !input.customer_phone) {
     return { success: false, error: 'Name and phone are required' }
   }
@@ -54,10 +54,9 @@ export async function createOrder(input: CreateOrderInput) {
     return { success: false, error: 'Order details required' }
   }
 
-  // Generate unique order number
+  // 2. Prepare Order Data
   const order_number = generateOrderNumber()
 
-  // Prepare order data
   const orderData: any = {
     order_number,
     order_type: input.order_type,
@@ -77,7 +76,7 @@ export async function createOrder(input: CreateOrderInput) {
     orderData.custom_bouquet = input.custom_bouquet
   }
 
-  // Insert order
+  // 3. Insert Order into DB
   const { data: order, error } = await supabase
     .from('orders')
     .insert(orderData)
@@ -88,20 +87,23 @@ export async function createOrder(input: CreateOrderInput) {
     console.error('Order creation failed:', error)
     return { success: false, error: 'Failed to create order' }
   }
+
+  // 4. Fetch Bundle Name for Email (The Fix)
   let bundleName = undefined
-    
-    if (input.order_type === 'bundle' && input.preset_bundle_id) {
-      const { data: bundleData } = await supabase
-        .from('preset_bundles') // Ensure this matches your table name in Supabase
-        .select('name')
-        .eq('id', input.preset_bundle_id)
-        .single()
-        
-      if (bundleData) {
-        bundleName = bundleData.name
-      }
+  
+  if (input.order_type === 'bundle' && input.preset_bundle_id) {
+    const { data: bundleData } = await supabase
+      .from('preset_bundles') // ✅ Updated table name
+      .select('name')
+      .eq('id', input.preset_bundle_id)
+      .single()
+      
+    if (bundleData) {
+      bundleName = bundleData.name
     }
-  // TODO: Send email notification (we'll add this later)
+  }
+
+  // 5. Send Email
   try {
     await sendOrderNotification({
       order_number,
@@ -112,7 +114,8 @@ export async function createOrder(input: CreateOrderInput) {
       notes: input.notes,
       order_type: input.order_type,
       total_price: input.total_price,
-      bundle_name: input.order_type === 'bundle' ? orderData.preset_bundle_id : undefined,
+      // Uses the fetched name ("Stargazer..."), or falls back to ID if lookup fails
+      bundle_name: bundleName || input.preset_bundle_id, 
       selected_theme: input.selected_theme,
       custom_bouquet: input.custom_bouquet,
 
@@ -128,9 +131,8 @@ export async function createOrder(input: CreateOrderInput) {
     })
   } catch (emailError) {
     console.error('Email notification failed:', emailError)
-    // Don't fail the order if email fails
   }
-  return { success: true, order_number }
   
+  return { success: true, order_number }
 }
 
