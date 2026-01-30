@@ -88,7 +88,19 @@ export async function createOrder(input: CreateOrderInput) {
     console.error('Order creation failed:', error)
     return { success: false, error: 'Failed to create order' }
   }
-
+  let bundleName = undefined
+    
+    if (input.order_type === 'bundle' && input.preset_bundle_id) {
+      const { data: bundleData } = await supabase
+        .from('preset_bundles') // Ensure this matches your table name in Supabase
+        .select('name')
+        .eq('id', input.preset_bundle_id)
+        .single()
+        
+      if (bundleData) {
+        bundleName = bundleData.name
+      }
+    }
   // TODO: Send email notification (we'll add this later)
   try {
     await sendOrderNotification({

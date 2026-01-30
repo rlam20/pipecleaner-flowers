@@ -28,7 +28,7 @@ type OrderEmailData = {
   addon_vase?: boolean
   
   // For bundle orders
-  name?: string
+  bundle_name?: string
   selected_theme?: string
   
   // For custom/individual orders
@@ -44,7 +44,7 @@ export async function sendOrderNotification(data: OrderEmailData) {
       orderDetailsHtml = `
         <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
           <h3 style="margin: 0 0 10px 0; color: #881337;">Bundle Order</h3>
-          <p style="margin: 5px 0;"><strong>Bundle:</strong> ${data.name}</p>
+          <p style="margin: 5px 0;"><strong>Bundle:</strong> ${data.bundle_name}</p>
           <p style="margin: 5px 0;"><strong>Color Theme:</strong> ${data.selected_theme}</p>
         </div>
       `
