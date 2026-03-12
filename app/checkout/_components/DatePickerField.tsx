@@ -19,9 +19,9 @@ export default function DatePickerField({ label, selected, onChange, minDays = 2
     // Determine minimum days based on order type
     let minDaysRequired = 2
     if (orderType === 'custom' || orderType === 'individual') {
-      minDaysRequired = 2 // 48 hours minimum
+      minDaysRequired = 5 // 48 hours minimum
     } else if (orderType === 'bundle') {
-      minDaysRequired = 3 // 3-5 days for large bouquets
+      minDaysRequired = 5 // 3-5 days for large bouquets
     }
     
     date.setDate(date.getDate() + minDaysRequired)
@@ -30,11 +30,11 @@ export default function DatePickerField({ label, selected, onChange, minDays = 2
 
   const getLeadTimeMessage = () => {
     if (orderType === 'individual') {
-      return 'Please allow AT LEAST 48–72 hours for individual/small bouquets.'
+      return 'Please allow AT LEAST 5 days for individual orders.'
     } else if (orderType === 'custom') {
-      return 'Please allow AT LEAST 48–72 hours for small bouquets and 3–5 days for large bouquets.'
+      return 'Please allow AT LEAST 5 days for custom bouquets.'
     } else {
-      return 'Please allow AT LEAST 3–5 days for large bouquets.'
+      return 'Please allow AT LEAST 5 days for large bouquets.'
     }
   }
 

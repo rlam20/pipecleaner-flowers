@@ -194,7 +194,8 @@ export default function IndividualFlowerSelector({ flowerTypes, colorOptions }: 
       <aside className="lg:col-span-4">
         <div className="bg-white p-8 rounded-2xl border border-stone-200 shadow-xl sticky top-6">
           <h2 className="text-2xl font-bold mb-6 border-b pb-4">Your Order</h2>
-          
+            <h5 className="text-2xl font-bold mb-6 border-b pb-4">Individual flowers do not come wrapped with paper. If you'd like paper wraps, please refer to 'Build your own bouquet'</h5>
+
           <div className="h-[50vh] overflow-y-auto pr-2 mb-8">
             <div className="space-y-3">
               {state.items.length === 0 && (
