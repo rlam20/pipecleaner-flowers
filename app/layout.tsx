@@ -1,15 +1,6 @@
 import type { Metadata, Viewport } from 'next'
-import { Merriweather } from 'next/font/google'
 import { OrderProvider } from './components/OrderProvider'
 import './globals.css'
-
-const merriweather = Merriweather({
-  subsets: ['latin'],
-  weight: ['300', '400', '700'],
-  style: ['normal', 'italic'],
-  display: 'swap',
-  variable: '--font-merriweather',
-})
 
 export const metadata: Metadata = {
   title: {
@@ -23,7 +14,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={merriweather.variable}>
+    <html lang="en">
       <body>
         <a className="skip-link" href="#main-content">Skip to content</a>
         <OrderProvider>{children}</OrderProvider>

@@ -27,7 +27,7 @@
   --color-error: #932e20;
   --color-error-surface: #fff0e9;
   --font-body: Arial, Helvetica, sans-serif;
-  --font-heading: var(--font-merriweather), Georgia, 'Times New Roman', serif;
+  --font-heading: Georgia, 'Times New Roman', serif;
   --content-width: 1320px;
 }
 
