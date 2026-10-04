@@ -1,5 +1,7 @@
 import type { CookieProduct, OrderDraft, OrderItemInput, OrderLine, PickupSlot, PickupWindow, StorefrontData } from './types'
 
+export const CURRENT_PICKUP_DATE = '2026-10-09'
+
 export const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
 export const totalQuantity = (items: OrderItemInput[]) => items.reduce((sum, item) => sum + item.quantity, 0)
 export const orderCategory = (quantity: number): 'snack' | 'party' => quantity >= 7 ? 'party' : 'snack'
@@ -40,7 +42,7 @@ export function formatTime(value: string): string {
 }
 
 export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[] {
-  if (!validDate(date)) return []
+  if (!validDate(date) || date !== CURRENT_PICKUP_DATE) return []
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
   const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
   return windows.filter(window => window.active && window.day_of_week === weekday).flatMap(window => {
@@ -87,7 +89,7 @@ export function validateDraft(draft: OrderDraft, data: StorefrontData, now = new
   const email = draft.customer.email.trim()
   if (email && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errors.email = 'Enter a valid email address or leave this blank.'
   if (draft.customer.social_handle.trim().length > 100) errors.social_handle = 'Keep your social handle under 100 characters.'
-  if (!validDate(draft.pickup_date) || draft.pickup_date < earliestPickupDate(data.settings.time_zone, now)) errors.pickup_date = 'Choose a pickup date at least two calendar days from today.'
+  if (!validDate(draft.pickup_date) || draft.pickup_date !== CURRENT_PICKUP_DATE || draft.pickup_date < earliestPickupDate(data.settings.time_zone, now)) errors.pickup_date = 'Choose the available pickup date.'
   if (!pickupSlots(draft.pickup_date, data.windows).some(slot => slot.window_id === draft.pickup_window_id && slot.time === draft.pickup_time)) errors.pickup_time = 'Choose an available pickup time.'
   const recipient = draft.payment_method === 'venmo' ? data.settings.venmo_handle : draft.payment_method === 'zelle' ? data.settings.zelle_recipient : null
   if (!recipient) errors.payment_method = 'Please choose an available payment method.'

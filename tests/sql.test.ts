@@ -5,6 +5,7 @@ import type { CreateCookieOrderInput, OrderReceipt } from '../lib/types'
 
 const migration = readFileSync(new URL('../supabase/migrations/202609250001_cookie_storefront.sql', import.meta.url), 'utf8')
 const leadTimeMigration = readFileSync(new URL('../supabase/migrations/202610040001_two_day_pickup_lead.sql', import.meta.url), 'utf8')
+const specialPickupMigration = readFileSync(new URL('../supabase/migrations/202610040002_oct_9_pickup_only.sql', import.meta.url), 'utf8')
 const seed = readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8')
 type RpcResult = { success: boolean; code?: string; error?: string; created?: boolean; receipt?: OrderReceipt }
 let db: PGlite
@@ -16,9 +17,9 @@ function input(): CreateCookieOrderInput {
     items: [{ product_id: 'matcha-neapolitan', quantity: 6 }],
     packaging: 'standard', card_message: '',
     customer: { first_name: 'Test', last_name: 'Customer', phone: '+44 20 7946 0958', email: '', social_handle: '' },
-    pickup_date: pickupDate, pickup_time: '16:00', pickup_window_id: 'test-pickup', payment_method: 'venmo',
+    pickup_date: pickupDate, pickup_time: '11:00', pickup_window_id: 'oct-9-2026', payment_method: 'venmo',
     expected_prices: [{ product_id: 'matcha-neapolitan', unit_price_cents: 400 }],
-    expected_pickup: { time_zone: 'America/New_York', pickup_location: null, start_time: '16:00', end_time: '18:00', slot_minutes: 30 },
+    expected_pickup: { time_zone: 'America/New_York', pickup_location: null, start_time: '11:00', end_time: '17:00', slot_minutes: 30 },
     expected_payment_recipient: 'juzaoi',
   }
 }
@@ -34,6 +35,7 @@ beforeAll(async () => {
   await db.exec(migration)
   await db.exec(leadTimeMigration)
   await db.exec(seed)
+  await db.exec(specialPickupMigration)
 }, 60_000)
 
 beforeEach(async () => {
@@ -43,12 +45,9 @@ beforeEach(async () => {
     update public.cookie_products set active = true, unit_price_cents = 400;
     update public.cookie_store_settings set time_zone = 'America/New_York', pickup_location = null,
       venmo_handle = 'juzaoi', zelle_recipient = null;
-    delete from public.cookie_pickup_windows where id = 'test-pickup';
-    insert into public.cookie_pickup_windows(id,day_of_week,start_time,end_time,slot_minutes)
-    values ('test-pickup', extract(dow from ((current_timestamp at time zone 'America/New_York')::date + 2)), '16:00', '18:00', 30);
+    update public.cookie_pickup_windows set active = (id = 'oct-9-2026');
   `)
-  const { rows } = await db.query<{ date: string }>("select to_char((current_timestamp at time zone 'America/New_York')::date + 2, 'YYYY-MM-DD') as date")
-  pickupDate = rows[0].date
+  pickupDate = '2026-10-09'
 })
 
 afterAll(async () => { await db?.close() })
@@ -78,7 +77,7 @@ describe('cookie order database contract', () => {
     expect(rows[0]).toMatchObject({
       customer_first_name: 'Test', customer_last_name: 'Customer', customer_phone: payload.customer.phone,
       customer_email: payload.customer.email, customer_social_handle: payload.customer.social_handle,
-      pickup_window_id: 'test-pickup', pickup_time: '16:00:00', time_zone: 'America/New_York',
+      pickup_window_id: 'oct-9-2026', pickup_time: '11:00:00', time_zone: 'America/New_York',
       card_message: 'A little treat.', payment_method: 'venmo', payment_recipient: 'juzaoi', status: 'awaiting_payment',
     })
     expect(rows[0].items).toEqual([{ product_id: 'matcha-neapolitan', name: 'Matcha Neapolitan', quantity: 6, unit_price_cents: 400, line_total_cents: 2400 }])
@@ -134,13 +133,12 @@ describe('cookie order database contract', () => {
     expect(await submit({ ...input(), card_message: 'A previous card draft' })).toMatchObject({ success: true, receipt: { card_message: '' } })
   })
 
-  it('accepts exactly two local calendar days and rejects a shorter lead time', async () => {
+  it('accepts October 9 and rejects every other pickup date', async () => {
     expect((await submit(input())).success).toBe(true)
-    const { rows } = await db.query<{ date: string }>("select to_char((current_timestamp at time zone 'America/New_York')::date + 1, 'YYYY-MM-DD') as date")
-    expect(await submit({ ...input(), pickup_date: rows[0].date })).toMatchObject({ success: false, code: 'validation' })
+    expect(await submit({ ...input(), pickup_date: '2026-10-16' })).toMatchObject({ success: false, code: 'validation' })
   })
 
-  it.each(['16:15', '18:00', '25:00', '16:00:30'])('rejects unavailable or invalid pickup time %s', async (pickup_time) => {
+  it.each(['10:30', '11:15', '17:00', '25:00', '11:00:30'])('rejects unavailable or invalid pickup time %s', async (pickup_time) => {
     expect(await submit({ ...input(), pickup_time })).toMatchObject({ success: false, code: 'validation' })
   })
 
