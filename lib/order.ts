@@ -26,7 +26,7 @@ export function validDate(value: string): boolean {
 
 export function earliestPickupDate(timeZone: string, now = new Date()): string {
   const date = new Date(`${businessDate(timeZone, now)}T12:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + 5)
+  date.setUTCDate(date.getUTCDate() + 2)
   return date.toISOString().slice(0, 10)
 }
 
@@ -87,7 +87,7 @@ export function validateDraft(draft: OrderDraft, data: StorefrontData, now = new
   const email = draft.customer.email.trim()
   if (email && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errors.email = 'Enter a valid email address or leave this blank.'
   if (draft.customer.social_handle.trim().length > 100) errors.social_handle = 'Keep your social handle under 100 characters.'
-  if (!validDate(draft.pickup_date) || draft.pickup_date < earliestPickupDate(data.settings.time_zone, now)) errors.pickup_date = 'Choose a pickup date at least five calendar days from today.'
+  if (!validDate(draft.pickup_date) || draft.pickup_date < earliestPickupDate(data.settings.time_zone, now)) errors.pickup_date = 'Choose a pickup date at least two calendar days from today.'
   if (!pickupSlots(draft.pickup_date, data.windows).some(slot => slot.window_id === draft.pickup_window_id && slot.time === draft.pickup_time)) errors.pickup_time = 'Choose an available pickup time.'
   const recipient = draft.payment_method === 'venmo' ? data.settings.venmo_handle : draft.payment_method === 'zelle' ? data.settings.zelle_recipient : null
   if (!recipient) errors.payment_method = 'Please choose an available payment method.'

@@ -4,6 +4,7 @@ import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest'
 import type { CreateCookieOrderInput, OrderReceipt } from '../lib/types'
 
 const migration = readFileSync(new URL('../supabase/migrations/202609250001_cookie_storefront.sql', import.meta.url), 'utf8')
+const leadTimeMigration = readFileSync(new URL('../supabase/migrations/202610040001_two_day_pickup_lead.sql', import.meta.url), 'utf8')
 const seed = readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8')
 type RpcResult = { success: boolean; code?: string; error?: string; created?: boolean; receipt?: OrderReceipt }
 let db: PGlite
@@ -31,6 +32,7 @@ beforeAll(async () => {
   db = new PGlite()
   await db.exec('create role anon nologin; create role authenticated nologin;')
   await db.exec(migration)
+  await db.exec(leadTimeMigration)
   await db.exec(seed)
 }, 60_000)
 
@@ -43,9 +45,9 @@ beforeEach(async () => {
       venmo_handle = 'juzaoi', zelle_recipient = null;
     delete from public.cookie_pickup_windows where id = 'test-pickup';
     insert into public.cookie_pickup_windows(id,day_of_week,start_time,end_time,slot_minutes)
-    values ('test-pickup', extract(dow from ((current_timestamp at time zone 'America/New_York')::date + 5)), '16:00', '18:00', 30);
+    values ('test-pickup', extract(dow from ((current_timestamp at time zone 'America/New_York')::date + 2)), '16:00', '18:00', 30);
   `)
-  const { rows } = await db.query<{ date: string }>("select to_char((current_timestamp at time zone 'America/New_York')::date + 5, 'YYYY-MM-DD') as date")
+  const { rows } = await db.query<{ date: string }>("select to_char((current_timestamp at time zone 'America/New_York')::date + 2, 'YYYY-MM-DD') as date")
   pickupDate = rows[0].date
 })
 
@@ -132,9 +134,9 @@ describe('cookie order database contract', () => {
     expect(await submit({ ...input(), card_message: 'A previous card draft' })).toMatchObject({ success: true, receipt: { card_message: '' } })
   })
 
-  it('accepts exactly five local calendar days and rejects a shorter lead time', async () => {
+  it('accepts exactly two local calendar days and rejects a shorter lead time', async () => {
     expect((await submit(input())).success).toBe(true)
-    const { rows } = await db.query<{ date: string }>("select to_char((current_timestamp at time zone 'America/New_York')::date + 4, 'YYYY-MM-DD') as date")
+    const { rows } = await db.query<{ date: string }>("select to_char((current_timestamp at time zone 'America/New_York')::date + 1, 'YYYY-MM-DD') as date")
     expect(await submit({ ...input(), pickup_date: rows[0].date })).toMatchObject({ success: false, code: 'validation' })
   })
 

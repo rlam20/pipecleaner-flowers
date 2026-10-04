@@ -5,7 +5,7 @@ A two-page cookie ordering storefront built with Next.js, TypeScript, Tailwind C
 ## Local setup
 
 1. Install packages with `npm install`.
-2. Apply `supabase/migrations/202609250001_cookie_storefront.sql` in the Supabase SQL editor.
+2. Apply the SQL files in `supabase/migrations` in filename order using the Supabase SQL editor.
 3. Apply `supabase/seed.sql` once to add the three sample products, placeholder prices, Venmo recipient, and sample pickup hours.
 4. Configure the environment variables below and run `npm run dev`.
 
@@ -33,7 +33,7 @@ Use the Supabase table editor:
 - `cookie_pickup_windows`: recurring hours by weekday (`0` Sunday through `6` Saturday), start/end times, and slot duration. Seeded hours are sample settings.
 - `cookie_orders`: saved orders and their status. Prices, pickup details, and payment recipient are snapshotted at submission time.
 
-The seed uses `on conflict do nothing`, so running it again will not overwrite later edits. Pickup dates require at least five calendar days of lead time in the configured business time zone. The end of a pickup window is exclusive.
+The seed uses `on conflict do nothing`, so running it again will not overwrite later edits. Pickup dates require at least two calendar days of lead time in the configured business time zone. The end of a pickup window is exclusive.
 
 ## Images and design
 
@@ -43,7 +43,9 @@ Brand and semantic colors live at the top of `app/globals.css`. Global ordering 
 
 ## Email and payment
 
-Orders are always committed before a notification is attempted. Email failures do not discard an order; Supabase remains authoritative. `RESEND_API_KEY` authenticates Resend and `BUSINESS_EMAIL` is used as both the notification destination and sender. That address must be permitted by your Resend account. You may optionally set `RESEND_FROM_EMAIL` to a separate verified sender identity.
+Orders are always committed before a notification is attempted. Email failures do not discard an order; Supabase remains authoritative. `RESEND_API_KEY` authenticates Resend and `BUSINESS_EMAIL` is the notification destination. By default, notifications are sent from `Dough Not Disturb <onboarding@resend.dev>`, which Resend limits to the email address associated with your Resend account. If the customer supplied an email address, it is set as `Reply-To` so replying to the notification addresses the customer.
+
+For production sending to other recipients, verify a domain and set `RESEND_FROM_EMAIL` to a sender on that domain. This optional variable overrides the Resend testing sender.
 
 Payment is manual. Checkout displays the configured Venmo or Zelle recipient and asks the customer to include the generated order number. New orders remain `awaiting_payment`; the site does not claim to verify payment.
 

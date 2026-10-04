@@ -14,8 +14,8 @@ const currency = (cents: number) => `$${(cents / 100).toFixed(2)}`
 export async function sendCookieOrderNotification(receipt: OrderReceipt, customer: CustomerDetails): Promise<boolean> {
   const apiKey = process.env.RESEND_API_KEY
   const to = process.env.BUSINESS_EMAIL
-  const from = process.env.RESEND_FROM_EMAIL || to
-  if (!apiKey || !from || !to) {
+  const from = process.env.RESEND_FROM_EMAIL || 'Dough Not Disturb <onboarding@resend.dev>'
+  if (!apiKey || !to) {
     console.warn('Order saved; order email is not configured.')
     return false
   }
@@ -56,7 +56,12 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
   try {
     const resend = new Resend(apiKey)
     const { error } = await resend.emails.send({
-      from, to, subject: `Cookie order ${receipt.order_number}`, text, html,
+      from,
+      to,
+      ...(customer.email.trim() ? { replyTo: customer.email.trim() } : {}),
+      subject: `Cookie order ${receipt.order_number}`,
+      text,
+      html,
     }, { idempotencyKey: `cookie-order-${receipt.order_number}` })
     if (error) {
       console.error('Order saved; the email provider could not send its notification.')

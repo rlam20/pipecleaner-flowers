@@ -39,9 +39,9 @@ describe('cookie order helpers', () => {
     expect(pickupSlots('2026-01-04', data.windows)).toEqual([])
   })
 
-  it('adds five local calendar days across month and year boundaries', () => {
-    expect(earliestPickupDate('America/New_York', new Date('2025-12-29T23:00:00Z'))).toBe('2026-01-03')
-    expect(earliestPickupDate('America/New_York', new Date('2026-03-07T05:30:00Z'))).toBe('2026-03-12')
+  it('adds two local calendar days across month and daylight-saving boundaries', () => {
+    expect(earliestPickupDate('America/New_York', new Date('2025-12-31T23:00:00Z'))).toBe('2026-01-02')
+    expect(earliestPickupDate('America/New_York', new Date('2026-03-07T05:30:00Z'))).toBe('2026-03-09')
   })
 
   it('requires a card message and leaves standard packaging free', () => {
@@ -50,7 +50,7 @@ describe('cookie order helpers', () => {
   })
 
   it('validates required contact, payment, lead time, and exact pickup slot', () => {
-    const now = new Date('2025-12-31T17:00:00Z')
+    const now = new Date('2026-01-03T17:00:00Z')
     expect(validateDraft(draft(), data, now)).toEqual({})
     const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '16:15', pickup_window_id: 'mon' }), data, now)
     expect(errors).toMatchObject({ first_name: expect.any(String), last_name: expect.any(String), phone: expect.any(String), email: expect.any(String), pickup_time: expect.any(String) })
