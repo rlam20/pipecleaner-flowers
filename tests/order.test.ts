@@ -1,0 +1,58 @@
+import { describe, expect, it } from 'vitest'
+import { earliestPickupDate, orderCategory, orderLines, pickupSlots, selectionErrors, validateDraft } from '../lib/order'
+import type { OrderDraft, StorefrontData } from '../lib/types'
+
+const data: StorefrontData = {
+  available: true,
+  products: [
+    { id: 'matcha', name: 'Matcha', description: '', image_url: '', unit_price_cents: 400, sort_order: 1, active: true },
+    { id: 'mango', name: 'Mango', description: '', image_url: '', unit_price_cents: 500, sort_order: 2, active: true },
+  ],
+  settings: { time_zone: 'America/New_York', pickup_location: null, venmo_handle: 'juzaoi', zelle_recipient: null, instagram_url: null },
+  windows: [{ id: 'mon', day_of_week: 1, start_time: '16:00', end_time: '18:00', slot_minutes: 30, active: true }],
+}
+
+function draft(overrides: Partial<OrderDraft> = {}): OrderDraft {
+  return {
+    items: [{ product_id: 'matcha', quantity: 1 }], packaging: 'standard', card_message: '',
+    customer: { first_name: 'Ray', last_name: 'Customer', phone: '(555) 123-4567', email: '', social_handle: '' },
+    pickup_date: '2026-01-05', pickup_time: '16:00', pickup_window_id: 'mon', payment_method: 'venmo', request_id: crypto.randomUUID(),
+    ...overrides,
+  }
+}
+
+describe('cookie order helpers', () => {
+  it('switches from Snack Pick Up to Party Pack at seven cookies', () => {
+    expect(orderCategory(6)).toBe('snack')
+    expect(orderCategory(7)).toBe('party')
+  })
+
+  it('uses current catalog prices for every line', () => {
+    expect(orderLines([{ product_id: 'matcha', quantity: 2 }, { product_id: 'mango', quantity: 1 }], data.products)).toEqual([
+      { product_id: 'matcha', name: 'Matcha', quantity: 2, unit_price_cents: 400, line_total_cents: 800 },
+      { product_id: 'mango', name: 'Mango', quantity: 1, unit_price_cents: 500, line_total_cents: 500 },
+    ])
+  })
+
+  it('creates start-inclusive, end-exclusive pickup slots', () => {
+    expect(pickupSlots('2026-01-05', data.windows).map(slot => slot.time)).toEqual(['16:00', '16:30', '17:00', '17:30'])
+    expect(pickupSlots('2026-01-04', data.windows)).toEqual([])
+  })
+
+  it('adds five local calendar days across month and year boundaries', () => {
+    expect(earliestPickupDate('America/New_York', new Date('2025-12-29T23:00:00Z'))).toBe('2026-01-03')
+    expect(earliestPickupDate('America/New_York', new Date('2026-03-07T05:30:00Z'))).toBe('2026-03-12')
+  })
+
+  it('requires a card message and leaves standard packaging free', () => {
+    expect(selectionErrors(draft({ packaging: 'card' }), data)).toHaveProperty('card_message')
+    expect(selectionErrors(draft(), data)).not.toHaveProperty('card_message')
+  })
+
+  it('validates required contact, payment, lead time, and exact pickup slot', () => {
+    const now = new Date('2025-12-31T17:00:00Z')
+    expect(validateDraft(draft(), data, now)).toEqual({})
+    const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '16:15', pickup_window_id: 'mon' }), data, now)
+    expect(errors).toMatchObject({ first_name: expect.any(String), last_name: expect.any(String), phone: expect.any(String), email: expect.any(String), pickup_time: expect.any(String) })
+  })
+})

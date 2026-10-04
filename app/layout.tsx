@@ -1,37 +1,33 @@
-import type { Metadata, Viewport } from "next";
-import { Merriweather } from "next/font/google";
-import "./globals.css";
+import type { Metadata, Viewport } from 'next'
+import { Merriweather } from 'next/font/google'
+import { OrderProvider } from './components/OrderProvider'
+import './globals.css'
 
 const merriweather = Merriweather({
-  subsets: ["latin"],
-  weight: ["300", "400", "700", "900"],
-  display: "swap",
-  variable: "--font-merriweather", 
-});
+  subsets: ['latin'],
+  weight: ['300', '400', '700'],
+  style: ['normal', 'italic'],
+  display: 'swap',
+  variable: '--font-merriweather',
+})
 
 export const metadata: Metadata = {
-  title: "Pipecleaner Flowers",
-  description: "Custom hand-crafted bouquets",
-};
+  title: {
+    default: 'DoughNotDisturb | A little pause. A really good cookie.',
+    template: '%s | DoughNotDisturb',
+  },
+  description: 'Make a little room for something good. Discover Matcha Neapolitan, Biscoff Chai, and Mango Lassi cookies, and build your pickup order.',
+}
 
-export const viewport: Viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
+export const viewport: Viewport = { width: 'device-width', initialScale: 1, themeColor: '#fff8ef' }
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en">
-      <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1" />
-      </head>
-      <body className={`${merriweather.className} antialiased bg-stone-50 text-zinc-900`}>
-        {children}
+    <html lang="en" className={merriweather.variable}>
+      <body>
+        <a className="skip-link" href="#main-content">Skip to content</a>
+        <OrderProvider>{children}</OrderProvider>
       </body>
     </html>
-  );
+  )
 }

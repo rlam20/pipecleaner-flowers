@@ -1,12 +1,16 @@
 {
-  "name": "pipecleaner-flowers",
+  "name": "dough-not-disturb",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -14,21 +18,20 @@
     "lucide-react": "^0.471.0",
     "next": "^16.1.6",
     "react": "19.2.3",
-    "react-datepicker": "^9.1.0",
     "react-dom": "19.2.3",
-    "resend": "^6.6.0",
-    "tailwind-merge": "^2.5.5",
-    "use-places-autocomplete": "^4.0.1"
+    "resend": "^6.6.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
-    "@types/react-datepicker": "^7.0.0",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^3.2.7"
   }
 }

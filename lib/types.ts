@@ -1,119 +1,89 @@
-// lib/types.ts
-
-export type FlowerType = {
-  id: string;
-  name: string;
-  base_price: number;
-  image_url: string;
-};
-
-export type ColorOption = {
-  id: string;
-  name: string;
-  price_modifier: number;
-};
-
-export type SelectedFlower = {
-  id: string;
-  flower_type_id: string;
-  flower_name: string;
-  color_id: string;
-  color_name: string;
-  price: number;
-};
-
-export type CustomBouquetAddons = {
-  pocky: boolean; //
-  vase: boolean;  //
-};
-
-export type CustomBouquet = {
-  flowers: SelectedFlower[];
-  addons: CustomBouquetAddons;
-  total_price: number;
-};
-
-export type FulfillmentMethod = 'pickup' | 'delivery';
-
-export type PickupDetails = {
-  pickup_name: string;
-  pickup_date: string;
-  pickup_location: 'Rice Hall' | 'Clemons Library';
-  pickup_instructions?: string;
-};
-
-export type DeliveryDetails = {
-  delivery_address: string;
-  delivery_date: string;
-  delivery_instructions?: string;
-  on_grounds_housing: boolean;
-};
-
-export type OrderAddons = {
-  pocky: boolean;
-  vase: boolean;
-};
-
-export type OrderFormData = {
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  recipient_name?: string;
-  notes?: string;
-  
-  fulfillment_method: FulfillmentMethod;
-  fulfillment_date: string;
-  
-  // Pickup or delivery details
-  pickup_details?: PickupDetails;
-  delivery_details?: DeliveryDetails;
-  
-  // Add-ons
-  addons: OrderAddons;
-};
-
-export type PresetBundle = {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  image_url: string;
-  flower_composition: {
-    flower_name: string;
-    quantity: number;
-  }[];
-  color_themes: string[];
-  created_at: string;
-};
-
-export type Order = {
-  id: string;
-  order_number: string;
-  order_type: 'bundle' | 'custom' | 'individual';
-  customer_name: string;
-  customer_phone: string;
-  customer_email?: string;
-  recipient_name?: string;
-  notes?: string;
-  
-  preset_bundle_id?: string;
-  selected_theme?: string;
-  custom_bouquet?: CustomBouquet;
-  
-  fulfillment_method: FulfillmentMethod;
-  fulfillment_date: string;
-  pickup_name?: string;
-  pickup_location?: string;
-  pickup_instructions?: string;
-  delivery_address?: string;
-  delivery_instructions?: string;
-  on_grounds_housing?: boolean;
-  
-  addon_pocky: boolean;
-  addon_vase: boolean;
-  
-  total_price: number;
-  delivery_fee: number;
-  status: 'awaiting_payment' | 'paid' | 'in_progress' | 'completed' | 'cancelled';
-  created_at: string;
-};
+export type CookieProduct = {
+  id: string
+  name: string
+  description: string
+  image_url: string
+  unit_price_cents: number
+  sort_order: number
+  active: boolean
+}
+export type StoreSettings = {
+  time_zone: string
+  pickup_location: string | null
+  venmo_handle: string | null
+  zelle_recipient: string | null
+  instagram_url: string | null
+}
+export type PickupWindow = {
+  id: string
+  day_of_week: number
+  start_time: string
+  end_time: string
+  slot_minutes: number
+  active: boolean
+}
+export type PickupSlot = { window_id: string; time: string; label: string }
+export type StorefrontData = {
+  products: CookieProduct[]
+  settings: StoreSettings
+  windows: PickupWindow[]
+  available: boolean
+}
+export type CustomerDetails = {
+  first_name: string
+  last_name: string
+  phone: string
+  email: string
+  social_handle: string
+}
+export type OrderItemInput = { product_id: string; quantity: number }
+export type Packaging = 'standard' | 'card'
+export type PaymentMethod = 'venmo' | 'zelle'
+export type OrderDraft = {
+  items: OrderItemInput[]
+  packaging: Packaging
+  card_message: string
+  customer: CustomerDetails
+  pickup_date: string
+  pickup_time: string
+  pickup_window_id: string
+  payment_method: PaymentMethod
+  request_id: string
+}
+export type OrderLine = {
+  product_id: string
+  name: string
+  quantity: number
+  unit_price_cents: number
+  line_total_cents: number
+}
+export type OrderReceipt = {
+  order_number: string
+  order_date: string
+  items: OrderLine[]
+  order_type: 'snack' | 'party'
+  packaging: Packaging
+  card_message: string
+  total_cents: number
+  pickup_date: string
+  pickup_time: string
+  pickup_location: string | null
+  time_zone: string
+  payment_method: PaymentMethod
+  payment_recipient: string
+  status: 'awaiting_payment'
+}
+export type CreateCookieOrderInput = OrderDraft & {
+  expected_prices: { product_id: string; unit_price_cents: number }[]
+  expected_pickup: {
+    time_zone: string
+    pickup_location: string | null
+    start_time: string
+    end_time: string
+    slot_minutes: number
+  }
+  expected_payment_recipient: string
+}
+export type CreateOrderResult =
+  | { success: true; receipt: OrderReceipt }
+  | { success: false; code: 'changed' | 'validation' | 'unavailable'; error: string; storefront?: StorefrontData }

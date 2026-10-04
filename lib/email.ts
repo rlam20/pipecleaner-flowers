@@ -1,213 +1,70 @@
+import 'server-only'
+
 import { Resend } from 'resend'
+import type { CustomerDetails, OrderReceipt } from '@/lib/types'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
-type OrderEmailData = {
-  order_number: string
-  customer_name: string
-  customer_phone: string
-  customer_email?: string
-  recipient_name?: string
-  notes?: string
-  order_type: string
-  total_price: number
-  
-  // Fulfillment details
-  fulfillment_method?: 'pickup' | 'delivery'
-  fulfillment_date?: string
-  pickup_name?: string
-  pickup_location?: string
-  pickup_instructions?: string
-  delivery_address?: string
-  delivery_instructions?: string
-  on_grounds_housing?: boolean
-  delivery_fee?: number
-  
-  // Add-ons
-  addon_pocky?: boolean
-  addon_vase?: boolean
-  
-  // For bundle orders
-  bundle_name?: string
-  selected_theme?: string
-  
-  // For custom/individual orders
-  custom_bouquet?: any
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;',
+  })[character]!)
 }
 
-export async function sendOrderNotification(data: OrderEmailData) {
+const currency = (cents: number) => `$${(cents / 100).toFixed(2)}`
+
+export async function sendCookieOrderNotification(receipt: OrderReceipt, customer: CustomerDetails): Promise<boolean> {
+  const apiKey = process.env.RESEND_API_KEY
+  const to = process.env.BUSINESS_EMAIL
+  const from = process.env.RESEND_FROM_EMAIL || to
+  if (!apiKey || !from || !to) {
+    console.warn('Order saved; order email is not configured.')
+    return false
+  }
+
+  const contact = [
+    `${customer.first_name.trim()} ${customer.last_name.trim()}`,
+    customer.phone.trim(), customer.email.trim(), customer.social_handle.trim(),
+  ].filter(Boolean)
+  const lines = receipt.items.map((item) =>
+    `${item.quantity} × ${item.name} — ${currency(item.unit_price_cents)} each — ${currency(item.line_total_cents)}`
+  )
+  const pickup = `${receipt.pickup_date} at ${receipt.pickup_time} (${receipt.time_zone})`
+  const location = receipt.pickup_location || 'Pickup location will be confirmed directly.'
+  const payment = `${receipt.payment_method === 'venmo' ? 'Venmo' : 'Zelle'}: ${receipt.payment_recipient}`
+  const text = [
+    `DoughNotDisturb order ${receipt.order_number}`,
+    `Order date: ${receipt.order_date}`, '', ...contact, '', ...lines,
+    `Order type: ${receipt.order_type === 'snack' ? 'Snack Pick Up' : 'Party Pack'}`,
+    `Packaging: ${receipt.packaging === 'card' ? 'Card with Note (no charge)' : 'Standard'}`,
+    receipt.card_message ? `Card message: ${receipt.card_message}` : '',
+    `Total: ${currency(receipt.total_cents)}`, `Pickup: ${pickup}`, location,
+    `Payment: ${payment}`, 'Status: Awaiting payment. Payment has not been verified.',
+  ].filter((line) => line !== '').join('\n')
+
+  const html = `<!doctype html><html><body style="font-family:Arial,sans-serif;color:#280800;line-height:1.6;max-width:640px;margin:0 auto;padding:24px">
+    <h1>DoughNotDisturb</h1><h2>New cookie order</h2>
+    <p><strong>${escapeHtml(receipt.order_number)}</strong><br>Order date: ${escapeHtml(receipt.order_date)}</p>
+    <h3>Customer</h3><p>${contact.map(escapeHtml).join('<br>')}</p>
+    <h3>${receipt.order_type === 'snack' ? 'Snack Pick Up' : 'Party Pack'}</h3>
+    <ul>${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>
+    <p>Packaging: ${receipt.packaging === 'card' ? 'Card with Note (no charge)' : 'Standard'}</p>
+    ${receipt.card_message ? `<p><strong>Card message:</strong><br>${escapeHtml(receipt.card_message).replace(/\n/g, '<br>')}</p>` : ''}
+    <p><strong>Total: ${currency(receipt.total_cents)}</strong></p>
+    <h3>Pickup</h3><p>${escapeHtml(pickup)}<br>${escapeHtml(location)}</p>
+    <h3>Payment</h3><p>${escapeHtml(payment)}<br><strong>Awaiting payment</strong> — payment has not been verified.</p>
+    </body></html>`
+
   try {
-    // Build order details HTML
-    let orderDetailsHtml = ''
-    
-    if (data.order_type === 'bundle') {
-      orderDetailsHtml = `
-        <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
-          <h3 style="margin: 0 0 10px 0; color: #881337;">Bundle Order</h3>
-          <p style="margin: 5px 0;"><strong>Bundle:</strong> ${data.bundle_name}</p>
-          <p style="margin: 5px 0;"><strong>Color Theme:</strong> ${data.selected_theme}</p>
-        </div>
-      `
-    } else if (data.order_type === 'custom') {
-      const flowers = data.custom_bouquet?.flowers || []
-      
-      orderDetailsHtml = `
-        <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
-          <h3 style="margin: 0 0 10px 0; color: #881337;">Custom Bouquet</h3>
-          <ul style="margin: 10px 0; padding-left: 20px;">
-            ${flowers.map((f: any) => `
-              <li style="margin: 5px 0;">${f.quantity || 1}x ${f.flower_name} (${f.color_name}) - $${f.price.toFixed(2)} each = $${((f.quantity || 1) * f.price).toFixed(2)}</li>
-            `).join('')}
-          </ul>
-        </div>
-      `
-    } else if (data.order_type === 'individual') {
-      const flowers = data.custom_bouquet?.flowers || []
-      
-      orderDetailsHtml = `
-        <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
-          <h3 style="margin: 0 0 10px 0; color: #881337;">Individual Flowers</h3>
-          <ul style="margin: 10px 0; padding-left: 20px;">
-            ${flowers.map((f: any) => `
-              <li style="margin: 5px 0;">${f.quantity}x ${f.flower_name} (${f.color_name}) - $${f.price.toFixed(2)} each = $${(f.price * f.quantity).toFixed(2)}</li>
-            `).join('')}
-          </ul>
-        </div>
-      `
+    const resend = new Resend(apiKey)
+    const { error } = await resend.emails.send({
+      from, to, subject: `Cookie order ${receipt.order_number}`, text, html,
+    }, { idempotencyKey: `cookie-order-${receipt.order_number}` })
+    if (error) {
+      console.error('Order saved; the email provider could not send its notification.')
+      return false
     }
-
-    // Add-ons section
-    if (data.addon_pocky || data.addon_vase) {
-      orderDetailsHtml += `
-        <div style="margin: 20px 0; padding: 15px; background-color: #fef2f2; border-radius: 8px;">
-          <h3 style="margin: 0 0 10px 0; color: #881337;">Add-ons</h3>
-          <ul style="margin: 10px 0; padding-left: 20px;">
-            ${data.addon_pocky ? '<li style="margin: 5px 0;">Strawberry Pocky (+$1.50)</li>' : ''}
-            ${data.addon_vase ? '<li style="margin: 5px 0;">Glass Vase (+$2.00)</li>' : ''}
-          </ul>
-        </div>
-      `
-    }
-
-    // Fulfillment details
-    if (data.fulfillment_method === 'pickup') {
-      orderDetailsHtml += `
-        <div style="margin: 20px 0; padding: 15px; background-color: #eff6ff; border-radius: 8px;">
-          <h3 style="margin: 0 0 10px 0; color: #1e40af;">📍 Pickup Details</h3>
-          <ul style="margin: 10px 0; padding-left: 20px;">
-            <li style="margin: 5px 0;"><strong>Pickup Name:</strong> ${data.pickup_name}</li>
-            <li style="margin: 5px 0;"><strong>Pickup Date:</strong> ${data.fulfillment_date}</li>
-            <li style="margin: 5px 0;"><strong>Location:</strong> ${data.pickup_location}</li>
-            ${data.pickup_instructions ? `<li style="margin: 5px 0;"><strong>Instructions:</strong> ${data.pickup_instructions}</li>` : ''}
-          </ul>
-        </div>
-      `
-    } else if (data.fulfillment_method === 'delivery') {
-      orderDetailsHtml += `
-        <div style="margin: 20px 0; padding: 15px; background-color: #eff6ff; border-radius: 8px;">
-          <h3 style="margin: 0 0 10px 0; color: #1e40af;">🚗 Delivery Details</h3>
-          <ul style="margin: 10px 0; padding-left: 20px;">
-            <li style="margin: 5px 0;"><strong>Address:</strong> ${data.delivery_address}</li>
-            <li style="margin: 5px 0;"><strong>Delivery Date:</strong> ${data.fulfillment_date}</li>
-            ${data.delivery_instructions ? `<li style="margin: 5px 0;"><strong>Instructions:</strong> ${data.delivery_instructions}</li>` : ''}
-            ${data.on_grounds_housing ? '<li style="margin: 5px 0;"><strong>On-Grounds Housing:</strong> Yes (must be home)</li>' : ''}
-            ${data.delivery_fee !== undefined ? `<li style="margin: 5px 0;"><strong>Delivery Fee:</strong> ${data.delivery_fee === 0 ? 'FREE' : '$' + data.delivery_fee.toFixed(2)}</li>` : ''}
-          </ul>
-        </div>
-      `
-    }
-
-    const emailHtml = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        </head>
-        <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <div style="background: linear-gradient(135deg, #fff1f2 0%, #fce7f3 100%); padding: 30px; border-radius: 12px; margin-bottom: 20px;">
-            <h1 style="margin: 0; color: #881337; font-size: 28px;">🌸 New Order Received!</h1>
-          </div>
-          
-          <div style="background: white; padding: 25px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">
-            <div style="background-color: #fef2f2; padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center;">
-              <p style="margin: 0 0 5px 0; font-size: 14px; color: #666;">Order Number</p>
-              <p style="margin: 0; font-size: 24px; font-weight: bold; color: #e11d48;">${data.order_number}</p>
-            </div>
-
-            <h2 style="color: #881337; margin-top: 0;">Customer Information</h2>
-            <table style="width: 100%; margin-bottom: 20px;">
-              <tr>
-                <td style="padding: 8px 0; color: #666; width: 140px;">Customer:</td>
-                <td style="padding: 8px 0; font-weight: 600;">${data.customer_name}</td>
-              </tr>
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Phone/IG:</td>
-                <td style="padding: 8px 0; font-weight: 600;">${data.customer_phone}</td>
-              </tr>
-              ${data.customer_email ? `
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Email:</td>
-                <td style="padding: 8px 0; font-weight: 600;">${data.customer_email}</td>
-              </tr>
-              ` : ''}
-              ${data.recipient_name ? `
-              <tr>
-                <td style="padding: 8px 0; color: #666;">Recipient:</td>
-                <td style="padding: 8px 0; font-weight: 600;">${data.recipient_name}</td>
-              </tr>
-              ` : ''}
-            </table>
-
-            ${data.notes ? `
-            <div style="margin: 20px 0; padding: 15px; background-color: #fffbeb; border-left: 4px solid #f59e0b; border-radius: 4px;">
-              <p style="margin: 0 0 5px 0; font-weight: 600; color: #92400e;">Special Instructions:</p>
-              <p style="margin: 0; color: #78350f;">${data.notes}</p>
-            </div>
-            ` : ''}
-
-            <h2 style="color: #881337;">Order Details</h2>
-            ${orderDetailsHtml}
-
-            <div style="margin-top: 25px; padding-top: 20px; border-top: 2px solid #fce7f3;">
-              <table style="width: 100%;">
-                <tr>
-                  <td style="font-size: 20px; font-weight: bold;">Total:</td>
-                  <td style="font-size: 24px; font-weight: bold; color: #e11d48; text-align: right;">$${data.total_price.toFixed(2)}</td>
-                </tr>
-              </table>
-            </div>
-
-            <div style="margin-top: 25px; padding: 20px; background-color: #fffbeb; border-radius: 8px; border: 2px dashed #f59e0b;">
-              <p style="margin: 0 0 10px 0; font-weight: bold; color: #92400e;">⏳ Awaiting Payment</p>
-              <p style="margin: 0; color: #78350f; font-size: 14px;">
-                This order is waiting for Venmo payment confirmation before work begins. Venmo: @juzaoi
-              </p>
-            </div>
-          </div>
-
-          <div style="margin-top: 20px; text-align: center; color: #666; font-size: 12px;">
-            <p>Order placed on ${new Date().toLocaleString()}</p>
-            <p style="margin-top: 10px;">
-              Contact customer via Instagram DM at @fauxlowers.byjz to confirm date/time
-            </p>
-          </div>
-        </body>
-      </html>
-    `
-
-    // Send to business
-    await resend.emails.send({
-      from: 'Pipecleaner Flowers <orders@resend.dev>',
-      to: process.env.BUSINESS_EMAIL!,
-      subject: `New Order: ${data.order_number} - ${data.fulfillment_method === 'pickup' ? 'Pickup' : 'Delivery'} on ${data.fulfillment_date}`,
-      html: emailHtml
-    })
-
-    console.log('Order notification sent successfully')
-    return { success: true }
-  } catch (error) {
-    console.error('Failed to send email:', error)
-    return { success: false, error }
+    return true
+  } catch {
+    console.error('Order saved; its email notification could not be sent.')
+    return false
   }
 }
