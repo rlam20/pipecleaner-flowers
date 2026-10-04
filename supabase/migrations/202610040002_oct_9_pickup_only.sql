@@ -14,10 +14,16 @@ on conflict (id) do update set
   slot_minutes = excluded.slot_minutes,
   active = excluded.active;
 
-alter function public.submit_cookie_order(jsonb)
-  rename to submit_cookie_order_with_standard_availability;
+do $$
+begin
+  if pg_catalog.to_regprocedure('public.submit_cookie_order_with_standard_availability(jsonb)') is null then
+    alter function public.submit_cookie_order(jsonb)
+      rename to submit_cookie_order_with_standard_availability;
+  end if;
+end;
+$$;
 
-create function public.submit_cookie_order(payload jsonb)
+create or replace function public.submit_cookie_order(payload jsonb)
 returns jsonb
 language plpgsql
 security definer

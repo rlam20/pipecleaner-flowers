@@ -36,6 +36,7 @@ beforeAll(async () => {
   await db.exec(leadTimeMigration)
   await db.exec(seed)
   await db.exec(specialPickupMigration)
+  await db.exec(specialPickupMigration)
 }, 60_000)
 
 beforeEach(async () => {
