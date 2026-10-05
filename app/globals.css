@@ -97,8 +97,6 @@ em { font-weight: inherit; }
 .cookie-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
 .cookie-photo { position: relative; aspect-ratio: 1; overflow: hidden; background: var(--cream-soft); border-radius: 2px; }
 .cookie-photo img { object-fit: cover; transition: transform 500ms ease; }
-.cookie-placeholder .cookie-photo { display: grid; place-items: center; background: linear-gradient(145deg, var(--cream-soft), var(--beige-light)); border: 1px dashed var(--color-border); }
-.flavor-placeholder-label { max-width: 120px; color: var(--green-deep); font-family: var(--font-heading); font-size: 17px; line-height: 1.25; text-align: center; }
 @media (hover: hover) { .cookie-card:hover .cookie-photo img { transform: scale(1.04); } }
 .cookie-number { position: absolute; left: 11px; top: 10px; font-size: 9px; letter-spacing: .1em; color: var(--brown-muted); background: var(--cream); width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; }
 .selected-label { position: absolute; bottom: 9px; left: 9px; display: flex; gap: 5px; align-items: center; padding: 5px 8px; background: var(--cream); color: var(--green-muted); font-size: 9px; }

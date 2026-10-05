@@ -7,7 +7,9 @@ insert into public.cookie_products
 values
   ('matcha-neapolitan', 'Matcha Neapolitan', 'Three lovely layers. Earthy matcha, strawberry, and vanilla in one soft-baked cookie.', '/cookies/matcha.webp', 300, 1),
   ('biscoff-chai', 'Biscoff Chai', 'A little spice, a little crunch. Chai warmth meets caramelized Biscoff.', '/cookies/biscoff.webp', 300, 2),
-  ('mango-lassi', 'Mango Lassi', 'A sunny little escape. Mango and creamy tang, inspired by a favorite sip.', '/cookies/mango.webp', 300, 3)
+  ('mango-lassi', 'Mango Lassi', 'A sunny little escape. Mango and creamy tang, inspired by a favorite sip.', '/cookies/mango.webp', 300, 3),
+  ('pumpkin-cheesecake', 'Pumpkin Cheesecake', 'Warm pumpkin spice wrapped around a rich, creamy cheesecake center.', '/cookies/pumpkin-cheesecake-v2.png', 300, 4),
+  ('banana-bread-snickerdoodle', 'Banana Bread Snickerdoodle', 'Cozy banana bread flavor rolled in the cinnamon-sugar warmth of a snickerdoodle.', '/cookies/banana-bread-snickerdoodle-v2.png', 300, 5)
 on conflict (id) do nothing;
 
 insert into public.cookie_store_settings

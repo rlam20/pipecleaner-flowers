@@ -20,6 +20,16 @@ const fallbackProducts: CookieProduct[] = [
     description: 'A sunny little escape. Mango and creamy tang, inspired by a favorite sip.',
     image_url: '/cookies/mango.webp', unit_price_cents: 300, sort_order: 3, active: true,
   },
+  {
+    id: 'pumpkin-cheesecake', name: 'Pumpkin Cheesecake',
+    description: 'Warm pumpkin spice wrapped around a rich, creamy cheesecake center.',
+    image_url: '/cookies/pumpkin-cheesecake-v2.png', unit_price_cents: 300, sort_order: 4, active: true,
+  },
+  {
+    id: 'banana-bread-snickerdoodle', name: 'Banana Bread Snickerdoodle',
+    description: 'Cozy banana bread flavor rolled in the cinnamon-sugar warmth of a snickerdoodle.',
+    image_url: '/cookies/banana-bread-snickerdoodle-v2.png', unit_price_cents: 300, sort_order: 5, active: true,
+  },
 ]
 
 const fallbackSettings: StoreSettings = {
