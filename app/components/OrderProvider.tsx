@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
-import { emptyDraft } from '@/lib/order'
+import { CURRENT_PICKUP_DATE, emptyDraft } from '@/lib/order'
 import type { CustomerDetails, OrderDraft, OrderReceipt, Packaging, PaymentMethod } from '@/lib/types'
 
 export const STORAGE_KEY = 'dough-not-disturb.order.v1'
@@ -46,8 +46,12 @@ export function restoreDraft(value: unknown): OrderDraft {
   const stored = value as Partial<OrderDraft>
   if (Array.isArray(stored.items)) base.items = stored.items.filter(item => item && typeof item.product_id === 'string' && Number.isSafeInteger(item.quantity) && item.quantity > 0 && item.quantity <= 2147483647)
   if (stored.packaging === 'card') base.packaging = 'card'
-  for (const key of ['card_message', 'pickup_date', 'pickup_time', 'pickup_window_id', 'request_id'] as const) {
+  for (const key of ['card_message', 'request_id'] as const) {
     if (typeof stored[key] === 'string') base[key] = stored[key]
+  }
+  if (stored.pickup_date === CURRENT_PICKUP_DATE) {
+    if (typeof stored.pickup_time === 'string') base.pickup_time = stored.pickup_time
+    if (typeof stored.pickup_window_id === 'string') base.pickup_window_id = stored.pickup_window_id
   }
   if (stored.payment_method === 'zelle') base.payment_method = 'zelle'
   for (const key of Object.keys(base.customer) as (keyof CustomerDetails)[]) {

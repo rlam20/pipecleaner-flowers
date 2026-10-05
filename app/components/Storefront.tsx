@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight, Check, Gift, Minus, Plus, Sparkle } from 'lucide-react'
 import type { CookieProduct, StorefrontData } from '@/lib/types'
-import { money, orderLines, totalQuantity } from '@/lib/order'
+import { money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
 import { useOrder } from './OrderProvider'
 import OrderSummary from './OrderSummary'
 import SiteHeader from './SiteHeader'
@@ -39,7 +39,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
   const { draft, dispatch, hydrated } = useOrder()
   const count = totalQuantity(draft.items)
   const lines = orderLines(draft.items, data.products)
-  const total = lines.reduce((sum, line) => sum + line.line_total_cents, 0)
+  const total = orderTotal(lines)
   const needsNote = draft.packaging === 'card' && !draft.card_message.trim()
   const canCheckout = hydrated && data.available && count > 0 && !needsNote
 
@@ -73,7 +73,15 @@ export default function Storefront({ data }: { data: StorefrontData }) {
           <div className="order-layout">
             <div className="order-builder">
               <div className="cookie-grid">{data.products.map((product, index) => <CookieCard product={product} index={index} available={data.available} key={product.id} />)}</div>
-              <p className="quantity-explainer"><Sparkle size={14} aria-hidden="true" /><span>A little treat or a reason to gather? <strong>1–6 cookies: Snack Pick Up.</strong> <strong>7 or more: Party Pack.</strong></span></p>
+              <div className="quantity-explainer">
+                <p>A little treat or a reason to gather?</p>
+                <ul>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>1–6 cookies: Snack Pick Up.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>7 or more: Party Pack.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>3 cookies: $8.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>5 cookies: $13.</strong></li>
+                </ul>
+              </div>
               <fieldset className="packaging-section" disabled={!data.available}>
                 <legend><span className="eyebrow">02 / The finishing touch</span><span className="packaging-title">A little extra thought.</span></legend>
                 <p>For yourself or someone on your mind. Your choice, always included.</p>

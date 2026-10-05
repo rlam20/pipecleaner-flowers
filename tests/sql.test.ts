@@ -18,8 +18,8 @@ function input(): CreateCookieOrderInput {
     packaging: 'standard', card_message: '',
     customer: { first_name: 'Test', last_name: 'Customer', phone: '+44 20 7946 0958', email: '', social_handle: '' },
     pickup_date: pickupDate, pickup_time: '11:00', pickup_window_id: 'oct-9-2026', payment_method: 'venmo',
-    expected_prices: [{ product_id: 'matcha-neapolitan', unit_price_cents: 400 }],
-    expected_pickup: { time_zone: 'America/New_York', pickup_location: null, start_time: '11:00', end_time: '17:00', slot_minutes: 30 },
+    expected_prices: [{ product_id: 'matcha-neapolitan', unit_price_cents: 300 }],
+    expected_pickup: { time_zone: 'America/New_York', pickup_location: null, start_time: '11:00', end_time: '17:30', slot_minutes: 30 },
     expected_payment_recipient: 'juzaoi',
   }
 }
@@ -43,7 +43,7 @@ beforeEach(async () => {
   await db.exec(`
     reset role;
     truncate public.cookie_orders;
-    update public.cookie_products set active = true, unit_price_cents = 400;
+    update public.cookie_products set active = true, unit_price_cents = 300;
     update public.cookie_store_settings set time_zone = 'America/New_York', pickup_location = null,
       venmo_handle = 'juzaoi', zelle_recipient = null;
     update public.cookie_pickup_windows set active = (id = 'oct-9-2026');
@@ -56,7 +56,7 @@ afterAll(async () => { await db?.close() })
 describe('cookie order database contract', () => {
   it('prices an order from the catalog, derives the 6/7 boundary, and returns no customer fields', async () => {
     const snack = await submit({ ...input(), total_cents: 1, order_type: 'party' })
-    expect(snack).toMatchObject({ success: true, created: true, receipt: { total_cents: 2400, order_type: 'snack', status: 'awaiting_payment' } })
+    expect(snack).toMatchObject({ success: true, created: true, receipt: { total_cents: 1800, order_type: 'snack', status: 'awaiting_payment' } })
     expect(snack.receipt).not.toHaveProperty('customer')
     expect(snack.receipt).not.toHaveProperty('customer_phone')
     expect(snack.receipt?.order_number).toMatch(/^DND-\d{8}-[A-F0-9]{12}$/)
@@ -64,7 +64,7 @@ describe('cookie order database contract', () => {
     party.items[0].quantity = 7
     party.packaging = 'card'
     party.card_message = 'Enjoy <these> & celebrate!'
-    expect(await submit(party)).toMatchObject({ success: true, receipt: { total_cents: 2800, order_type: 'party', card_message: party.card_message } })
+    expect(await submit(party)).toMatchObject({ success: true, receipt: { total_cents: 2100, order_type: 'party', card_message: party.card_message } })
   })
 
   it('persists fulfillment, contact, payment, card, and immutable item snapshots', async () => {
@@ -81,7 +81,16 @@ describe('cookie order database contract', () => {
       pickup_window_id: 'oct-9-2026', pickup_time: '11:00:00', time_zone: 'America/New_York',
       card_message: 'A little treat.', payment_method: 'venmo', payment_recipient: 'juzaoi', status: 'awaiting_payment',
     })
-    expect(rows[0].items).toEqual([{ product_id: 'matcha-neapolitan', name: 'Matcha Neapolitan', quantity: 6, unit_price_cents: 400, line_total_cents: 2400 }])
+    expect(rows[0].items).toEqual([{ product_id: 'matcha-neapolitan', name: 'Matcha Neapolitan', quantity: 6, unit_price_cents: 300, line_total_cents: 1800 }])
+  })
+
+  it.each([[3, 800], [5, 1300]])('saves the authoritative %i-cookie deal total', async (quantity, total) => {
+    const payload = input()
+    payload.items[0].quantity = quantity
+    expect(await submit(payload)).toMatchObject({ success: true, receipt: { total_cents: total } })
+    const { rows } = await db.query<{ total_cents: number; receipt: OrderReceipt }>('select total_cents, receipt from public.cookie_orders where request_id = $1', [payload.request_id])
+    expect(rows[0].total_cents).toBe(total)
+    expect(rows[0].receipt.total_cents).toBe(total)
   })
 
   it('makes retries idempotent even after catalog changes and rejects token reuse for a different payload', async () => {
@@ -139,7 +148,7 @@ describe('cookie order database contract', () => {
     expect(await submit({ ...input(), pickup_date: '2026-10-16' })).toMatchObject({ success: false, code: 'validation' })
   })
 
-  it.each(['10:30', '11:15', '17:00', '25:00', '11:00:30'])('rejects unavailable or invalid pickup time %s', async (pickup_time) => {
+  it.each(['10:30', '11:15', '17:30', '25:00', '11:00:30'])('rejects unavailable or invalid pickup time %s', async (pickup_time) => {
     expect(await submit({ ...input(), pickup_time })).toMatchObject({ success: false, code: 'validation' })
   })
 
@@ -153,7 +162,7 @@ describe('cookie order database contract', () => {
   it('returns changed for edited prices and unavailable products', async () => {
     await db.exec("update public.cookie_products set unit_price_cents = 500 where id = 'matcha-neapolitan'")
     expect(await submit(input())).toMatchObject({ success: false, code: 'changed' })
-    await db.exec("update public.cookie_products set unit_price_cents = 400, active = false where id = 'matcha-neapolitan'")
+    await db.exec("update public.cookie_products set unit_price_cents = 300, active = false where id = 'matcha-neapolitan'")
     expect(await submit(input())).toMatchObject({ success: false, code: 'changed' })
   })
 

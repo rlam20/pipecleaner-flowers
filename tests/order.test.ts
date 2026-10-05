@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { earliestPickupDate, orderCategory, orderLines, pickupSlots, selectionErrors, validateDraft } from '../lib/order'
+import { earliestPickupDate, orderCategory, orderLines, orderTotal, pickupSlots, selectionErrors, validateDraft } from '../lib/order'
 import type { OrderDraft, StorefrontData } from '../lib/types'
 
 const data: StorefrontData = {
@@ -9,7 +9,7 @@ const data: StorefrontData = {
     { id: 'mango', name: 'Mango', description: '', image_url: '', unit_price_cents: 500, sort_order: 2, active: true },
   ],
   settings: { time_zone: 'America/New_York', pickup_location: null, venmo_handle: 'juzaoi', zelle_recipient: null, instagram_url: null },
-  windows: [{ id: 'oct-9-2026', day_of_week: 5, start_time: '11:00', end_time: '17:00', slot_minutes: 30, active: true }],
+  windows: [{ id: 'oct-9-2026', day_of_week: 5, start_time: '11:00', end_time: '17:30', slot_minutes: 30, active: true }],
 }
 
 function draft(overrides: Partial<OrderDraft> = {}): OrderDraft {
@@ -34,10 +34,19 @@ describe('cookie order helpers', () => {
     ])
   })
 
+  it('applies the trio and five-cookie deal only at their exact quantities', () => {
+    const priced = (quantity: number) => orderTotal(orderLines([{ product_id: 'matcha', quantity }], data.products))
+    expect(priced(2)).toBe(800)
+    expect(priced(3)).toBe(800)
+    expect(priced(4)).toBe(1600)
+    expect(priced(5)).toBe(1300)
+    expect(priced(6)).toBe(2400)
+  })
+
   it('creates start-inclusive, end-exclusive pickup slots', () => {
     expect(pickupSlots('2026-10-09', data.windows).map(slot => slot.time)).toEqual([
       '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30',
+      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00',
     ])
     expect(pickupSlots('2026-10-16', data.windows)).toEqual([])
   })

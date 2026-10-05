@@ -3,14 +3,15 @@
 import type { ReactNode } from 'react'
 import { Cookie, Gift } from 'lucide-react'
 import type { CookieProduct } from '@/lib/types'
-import { money, orderLines, totalQuantity } from '@/lib/order'
+import { money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
 import { useOrder } from './OrderProvider'
 
 export default function OrderSummary({ products, compact = false, children }: { products: CookieProduct[]; compact?: boolean; children?: ReactNode }) {
   const { draft, dispatch } = useOrder()
   const lines = orderLines(draft.items, products)
   const count = totalQuantity(draft.items)
-  const total = lines.reduce((sum, line) => sum + line.line_total_cents, 0)
+  const subtotal = lines.reduce((sum, line) => sum + line.line_total_cents, 0)
+  const total = orderTotal(lines)
 
   return (
     <section className={`order-summary panel${compact ? ' summary-compact' : ''}`} aria-label="Order summary">
@@ -33,6 +34,7 @@ export default function OrderSummary({ products, compact = false, children }: { 
             ))}
           </ul>
           <div className="summary-packaging"><span><Gift size={16} strokeWidth={1.4} aria-hidden="true" />{draft.packaging === 'card' ? 'Card with Note' : 'Standard packaging'}</span><span>Included</span></div>
+          {total < subtotal && <div className="summary-packaging"><span>{count === 3 ? 'Trio deal' : '5-cookie deal'}</span><span>−{money(subtotal - total)}</span></div>}
           {draft.packaging === 'card' && draft.card_message.trim() && <p className="summary-note">“{draft.card_message}”</p>}
         </>
       )}

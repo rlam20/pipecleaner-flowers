@@ -8,17 +8,17 @@ const fallbackProducts: CookieProduct[] = [
   {
     id: 'matcha-neapolitan', name: 'Matcha Neapolitan',
     description: 'Three lovely layers. Earthy matcha, strawberry, and vanilla in one soft-baked cookie.',
-    image_url: '/cookies/matcha.webp', unit_price_cents: 400, sort_order: 1, active: true,
+    image_url: '/cookies/matcha.webp', unit_price_cents: 300, sort_order: 1, active: true,
   },
   {
     id: 'biscoff-chai', name: 'Biscoff Chai',
     description: 'A little spice, a little crunch. Chai warmth meets caramelized Biscoff.',
-    image_url: '/cookies/biscoff.webp', unit_price_cents: 400, sort_order: 2, active: true,
+    image_url: '/cookies/biscoff.webp', unit_price_cents: 300, sort_order: 2, active: true,
   },
   {
     id: 'mango-lassi', name: 'Mango Lassi',
     description: 'A sunny little escape. Mango and creamy tang, inspired by a favorite sip.',
-    image_url: '/cookies/mango.webp', unit_price_cents: 400, sort_order: 3, active: true,
+    image_url: '/cookies/mango.webp', unit_price_cents: 300, sort_order: 3, active: true,
   },
 ]
 

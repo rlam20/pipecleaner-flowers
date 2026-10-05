@@ -11,7 +11,7 @@ export default function SiteHeader({ checkout = false }: { checkout?: boolean })
 
   return (
     <>
-      <div className="announcement">A little anticipation makes it sweeter. Order at least 2 days ahead.</div>
+      <div className="announcement">NOTE: ALL ORDERS PLACED FROM NOW UNTIL 10/7 11:59PM WILL BE DELIVERED ON 10/9</div>
       <header className="site-header page-shell">
         <Link className="wordmark" href="/" aria-label="DoughNotDisturb home">Dough<span>Not</span>Disturb<span className="wordmark-period">.</span></Link>
         {checkout ? (

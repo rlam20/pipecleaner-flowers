@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, CreditCard, Gift, MapPin, PartyPopper } from 'lucide-react'
 import { createCookieOrder } from '@/lib/actions/orders'
-import { earliestPickupDate, formatDate, formatTime, money, orderLines, pickupSlots, totalQuantity, validateDraft } from '@/lib/order'
+import { CURRENT_PICKUP_DATE, FUNDRAISER_MODE, formatDate, formatTime, money, orderLines, orderTotal, pickupSlots, totalQuantity, validateDraft } from '@/lib/order'
 import type { CreateCookieOrderInput, StorefrontData } from '@/lib/types'
 import { useOrder } from '@/app/components/OrderProvider'
 import OrderSummary from '@/app/components/OrderSummary'
@@ -23,8 +23,7 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
   const selectedWindow = data.windows.find(window => window.id === draft.pickup_window_id)
   const count = totalQuantity(draft.items)
   const lines = orderLines(draft.items, data.products)
-  const total = lines.reduce((sum, line) => sum + line.line_total_cents, 0)
-  const minDate = earliestPickupDate(data.settings.time_zone)
+  const total = orderTotal(lines)
   const paymentRecipient = draft.payment_method === 'venmo' ? data.settings.venmo_handle : data.settings.zelle_recipient
 
   const setCustomer = (field: keyof typeof draft.customer, value: string) => {
@@ -96,12 +95,12 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
 
             <section className="checkout-section panel" aria-labelledby="pickup-heading">
               <SectionHeading number="02" eyebrow="Worth the wait" id="pickup-heading">Choose your pickup.</SectionHeading>
-              <p className="section-help">Pickup begins two calendar days from today. Available times change with the day you choose.</p>
+              {!FUNDRAISER_MODE && <p className="section-help">Pickup begins two calendar days from today. Available times change with the day you choose.</p>}
               <div className="checkout-fields two-columns">
-                <Field label="Pickup date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><input className="input" id={fieldId('pickup_date')} type="date" min={minDate} value={draft.pickup_date} aria-invalid={Boolean(errors.pickup_date)} onChange={e => dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' })} /></div></Field>
+                <Field label="Pickup date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><input className="input" id={fieldId('pickup_date')} type="date" min={CURRENT_PICKUP_DATE} max={CURRENT_PICKUP_DATE} value={draft.pickup_date} aria-invalid={Boolean(errors.pickup_date)} onChange={e => dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' })} /></div></Field>
                 <Field label="Pickup time" name="pickup_time" required error={errors.pickup_time}><div className="input-with-icon"><Clock3 size={17} /><select className="input" id={fieldId('pickup_time')} value={draft.pickup_window_id && draft.pickup_time ? `${draft.pickup_window_id}|${draft.pickup_time}` : ''} aria-invalid={Boolean(errors.pickup_time)} disabled={!draft.pickup_date || !slots.length} onChange={e => { const [windowId, time] = e.target.value.split('|'); dispatch({ type: 'pickup', date: draft.pickup_date, time: time || '', windowId: windowId || '' }) }}><option value="">{!draft.pickup_date ? 'Choose a date first' : slots.length ? 'Choose a time' : 'No pickup times this day'}</option>{slots.map(slot => <option value={`${slot.window_id}|${slot.time}`} key={`${slot.window_id}-${slot.time}`}>{slot.label}</option>)}</select></div></Field>
               </div>
-              <div className="pickup-location"><MapPin size={17} /><div><strong>{data.settings.pickup_location || 'Pickup location will be confirmed'}</strong><span>We&apos;ll use the contact details above if anything needs coordinating.</span></div></div>
+              <div className="pickup-location"><MapPin size={17} /><div>{FUNDRAISER_MODE ? <strong>We are currently only accepting orders for 10/9 YAR fundraiser with Bengali Students Organization. Location will be advertised, and those who purchase will recieve the location of pickup.</strong> : <><strong>{data.settings.pickup_location || 'Pickup location will be confirmed'}</strong><span>We&apos;ll use the contact details above if anything needs coordinating.</span></>}</div></div>
             </section>
 
             <section className="checkout-section panel" aria-labelledby="payment-heading">

@@ -1,9 +1,16 @@
 import type { CookieProduct, OrderDraft, OrderItemInput, OrderLine, PickupSlot, PickupWindow, StorefrontData } from './types'
 
 export const CURRENT_PICKUP_DATE = '2026-10-09'
+export const FUNDRAISER_MODE = true
 
 export const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
 export const totalQuantity = (items: OrderItemInput[]) => items.reduce((sum, item) => sum + item.quantity, 0)
+export function orderTotal(lines: OrderLine[]): number {
+  const quantity = totalQuantity(lines)
+  if (quantity === 3) return 800
+  if (quantity === 5) return 1300
+  return lines.reduce((sum, line) => sum + line.line_total_cents, 0)
+}
 export const orderCategory = (quantity: number): 'snack' | 'party' => quantity >= 7 ? 'party' : 'snack'
 export const categoryLabel = (category: 'snack' | 'party') => category === 'party' ? 'Party Pack' : 'Snack Pick Up'
 
@@ -60,7 +67,7 @@ export function emptyDraft(): OrderDraft {
   return {
     items: [], packaging: 'standard', card_message: '',
     customer: { first_name: '', last_name: '', phone: '', email: '', social_handle: '' },
-    pickup_date: '', pickup_time: '', pickup_window_id: '', payment_method: 'venmo', request_id: '',
+    pickup_date: CURRENT_PICKUP_DATE, pickup_time: '', pickup_window_id: '', payment_method: 'venmo', request_id: '',
   }
 }
 
@@ -72,7 +79,7 @@ export function selectionErrors(draft: OrderDraft, data: StorefrontData): Record
     errors.order = 'Your selection has changed. Please review the cookies in your order.'
   }
   if (new Set(draft.items.map(item => item.product_id)).size !== draft.items.length) errors.order = 'Please review your cookie quantities.'
-  const total = orderLines(draft.items, data.products).reduce((sum, line) => sum + line.line_total_cents, 0)
+  const total = orderTotal(orderLines(draft.items, data.products))
   if (!Number.isSafeInteger(total)) errors.order = 'This order is too large to calculate. Please reduce the quantity.'
   if (draft.packaging === 'card' && (!draft.card_message.trim() || draft.card_message.length > 500)) errors.card_message = 'Write a message of up to 500 characters for your card.'
   return errors
