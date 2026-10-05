@@ -35,6 +35,16 @@ function CookieCard({ product, index, available }: { product: CookieProduct; ind
   )
 }
 
+function FlavorPlaceholder({ number }: { number: number }) {
+  return (
+    <article className="cookie-card cookie-placeholder" aria-label={`Flavor ${number} coming soon`}>
+      <div className="cookie-photo"><span className="cookie-number">0{number}</span><span className="flavor-placeholder-label">Flavor reveal coming soon</span></div>
+      <div className="cookie-title-row"><h3>Something new is baking.</h3></div>
+      <p className="cookie-description">Another DoughNotDisturb flavor will be announced here soon.</p>
+    </article>
+  )
+}
+
 export default function Storefront({ data }: { data: StorefrontData }) {
   const { draft, dispatch, hydrated } = useOrder()
   const count = totalQuantity(draft.items)
@@ -72,7 +82,11 @@ export default function Storefront({ data }: { data: StorefrontData }) {
           {!data.available && <div className="store-notice" role="status"><strong>The cookie counter is getting ready.</strong><p>Take a look around. Online ordering is temporarily unavailable; please check back soon.</p></div>}
           <div className="order-layout">
             <div className="order-builder">
-              <div className="cookie-grid">{data.products.map((product, index) => <CookieCard product={product} index={index} available={data.available} key={product.id} />)}</div>
+              <div className="cookie-grid">
+                {data.products.map((product, index) => <CookieCard product={product} index={index} available={data.available} key={product.id} />)}
+                <FlavorPlaceholder number={data.products.length + 1} />
+                <FlavorPlaceholder number={data.products.length + 2} />
+              </div>
               <div className="quantity-explainer">
                 <p>A little treat or a reason to gather?</p>
                 <ul>

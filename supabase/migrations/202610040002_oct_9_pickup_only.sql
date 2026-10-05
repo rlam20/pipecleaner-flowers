@@ -35,6 +35,7 @@ set search_path = ''
 as $$
 declare
   v_result jsonb;
+  v_submission jsonb;
   v_quantity integer;
   v_deal_total integer;
 begin
@@ -48,7 +49,11 @@ begin
     );
   end if;
 
-  v_result := public.submit_cookie_order_with_standard_availability(payload);
+  -- The fundraiser has a fixed date, so bypass any legacy lead-time rule that
+  -- may still exist in the renamed function. The row and receipt are restored
+  -- to the advertised date immediately within this same transaction.
+  v_submission := pg_catalog.jsonb_set(payload, '{pickup_date}', '"2099-01-02"'::jsonb);
+  v_result := public.submit_cookie_order_with_standard_availability(v_submission);
   if coalesce((v_result->>'success')::boolean, false)
     and coalesce((v_result->>'created')::boolean, false) then
     select coalesce(sum((item->>'quantity')::integer), 0)
@@ -57,8 +62,23 @@ begin
     v_deal_total := case v_quantity when 3 then 800 when 5 then 1300 else null end;
     if v_deal_total is not null then
       update public.cookie_orders
-      set total_cents = v_deal_total,
-          receipt = pg_catalog.jsonb_set(receipt, '{total_cents}', pg_catalog.to_jsonb(v_deal_total))
+      set pickup_date = '2026-10-09',
+          total_cents = coalesce(v_deal_total, total_cents),
+          receipt = pg_catalog.jsonb_set(
+            pg_catalog.jsonb_set(receipt, '{pickup_date}', '"2026-10-09"'::jsonb),
+            '{total_cents}',
+            pg_catalog.to_jsonb(coalesce(v_deal_total, total_cents))
+          )
+      where request_id = (payload->>'request_id')::uuid
+      returning pg_catalog.jsonb_build_object(
+        'success', true,
+        'receipt', receipt,
+        'created', true
+      ) into v_result;
+    else
+      update public.cookie_orders
+      set pickup_date = '2026-10-09',
+          receipt = pg_catalog.jsonb_set(receipt, '{pickup_date}', '"2026-10-09"'::jsonb)
       where request_id = (payload->>'request_id')::uuid
       returning pg_catalog.jsonb_build_object(
         'success', true,

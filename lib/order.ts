@@ -85,7 +85,7 @@ export function selectionErrors(draft: OrderDraft, data: StorefrontData): Record
   return errors
 }
 
-export function validateDraft(draft: OrderDraft, data: StorefrontData, now = new Date()): Record<string, string> {
+export function validateDraft(draft: OrderDraft, data: StorefrontData): Record<string, string> {
   const errors = selectionErrors(draft, data)
   for (const field of ['first_name', 'last_name'] as const) {
     if (!draft.customer[field].trim() || draft.customer[field].trim().length > 80) errors[field] = `Enter your ${field.replace('_', ' ')} (up to 80 characters).`
@@ -96,7 +96,7 @@ export function validateDraft(draft: OrderDraft, data: StorefrontData, now = new
   const email = draft.customer.email.trim()
   if (email && (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))) errors.email = 'Enter a valid email address or leave this blank.'
   if (draft.customer.social_handle.trim().length > 100) errors.social_handle = 'Keep your social handle under 100 characters.'
-  if (!validDate(draft.pickup_date) || draft.pickup_date !== CURRENT_PICKUP_DATE || draft.pickup_date < earliestPickupDate(data.settings.time_zone, now)) errors.pickup_date = 'Choose the available pickup date.'
+  if (!validDate(draft.pickup_date) || draft.pickup_date !== CURRENT_PICKUP_DATE) errors.pickup_date = 'Choose the available pickup date.'
   if (!pickupSlots(draft.pickup_date, data.windows).some(slot => slot.window_id === draft.pickup_window_id && slot.time === draft.pickup_time)) errors.pickup_time = 'Choose an available pickup time.'
   const recipient = draft.payment_method === 'venmo' ? data.settings.venmo_handle : draft.payment_method === 'zelle' ? data.settings.zelle_recipient : null
   if (!recipient) errors.payment_method = 'Please choose an available payment method.'

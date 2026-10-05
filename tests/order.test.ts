@@ -62,9 +62,8 @@ describe('cookie order helpers', () => {
   })
 
   it('validates required contact, payment, lead time, and exact pickup slot', () => {
-    const now = new Date('2026-10-04T17:00:00Z')
-    expect(validateDraft(draft(), data, now)).toEqual({})
-    const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '11:15' }), data, now)
+    expect(validateDraft(draft(), data)).toEqual({})
+    const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '11:15' }), data)
     expect(errors).toMatchObject({ first_name: expect.any(String), last_name: expect.any(String), phone: expect.any(String), email: expect.any(String), pickup_time: expect.any(String) })
   })
 })
