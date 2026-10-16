@@ -13,7 +13,7 @@ on conflict (id) do nothing;
 
 insert into public.cookie_store_settings
   (id, time_zone, pickup_location, venmo_handle, zelle_recipient, instagram_url)
-values (true, 'America/New_York', null, 'juzaoi', null, null)
+values (true, 'America/New_York', null, null, '757-333-2559', null)
 on conflict (id) do nothing;
 
 insert into public.cookie_pickup_windows

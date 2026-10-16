@@ -6,7 +6,7 @@ A two-page cookie ordering storefront built with Next.js, TypeScript, Tailwind C
 
 1. Install packages with `npm install`.
 2. Apply the SQL files in `supabase/migrations` in filename order using the Supabase SQL editor.
-3. Apply `supabase/seed.sql` once to add the three sample products, placeholder prices, Venmo recipient, and sample pickup hours.
+3. Apply `supabase/seed.sql` once to add the sample products, placeholder prices, Zelle recipient, and sample pickup hours.
 4. Configure the environment variables below and run `npm run dev`.
 
 ```text
@@ -29,7 +29,7 @@ The migration is additive: it does not delete or alter the previous flower table
 Use the Supabase table editor:
 
 - `cookie_products`: product names, descriptions, active status, image paths, sort order, and prices in integer cents. The seeded `$4.00` prices are placeholders.
-- `cookie_store_settings`: time zone, pickup location, Venmo/Zelle recipients, and optional Instagram URL. Venmo is seeded as `juzaoi`; Zelle stays hidden until configured.
+- `cookie_store_settings`: time zone, pickup location, Zelle recipient, and optional Instagram URL. Zelle is configured as `757-333-2559`.
 - `cookie_pickup_windows`: recurring hours by weekday (`0` Sunday through `6` Saturday), start/end times, and slot duration. Seeded hours are sample settings.
 - `cookie_orders`: saved orders and their status. Prices, pickup details, and payment recipient are snapshotted at submission time.
 
@@ -47,7 +47,7 @@ Orders are always committed before a notification is attempted. Email failures d
 
 For production sending to other recipients, verify a domain and set `RESEND_FROM_EMAIL` to a sender on that domain. This optional variable overrides the Resend testing sender.
 
-Payment is manual. Checkout displays the configured Venmo or Zelle recipient and asks the customer to include the generated order number. New orders remain `awaiting_payment`; the site does not claim to verify payment.
+Payment is manual. Checkout displays the configured Zelle recipient and asks the customer to include the generated order number. New orders remain `awaiting_payment`; the site does not claim to verify payment.
 
 ## Verification
 

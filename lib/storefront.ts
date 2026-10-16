@@ -29,7 +29,7 @@ const fallbackProducts: CookieProduct[] = [
 
 const fallbackSettings: StoreSettings = {
   time_zone: 'America/New_York', pickup_location: null,
-  venmo_handle: 'juzaoi', zelle_recipient: null, instagram_url: null,
+  venmo_handle: null, zelle_recipient: '757-333-2559', instagram_url: null,
 }
 
 const nullableText = (value: unknown): string | null =>
@@ -95,7 +95,7 @@ export async function getStorefront(): Promise<StorefrontData> {
 
     return {
       products, settings, windows,
-      available: products.length > 0 && windows.length > 0 && Boolean(settings.venmo_handle || settings.zelle_recipient),
+      available: products.length > 0 && windows.length > 0 && Boolean(settings.zelle_recipient),
     }
   } catch {
     return fallback

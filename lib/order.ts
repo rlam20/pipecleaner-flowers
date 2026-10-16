@@ -73,7 +73,7 @@ export function emptyDraft(): OrderDraft {
   return {
     items: [], packaging: 'standard', card_message: '',
     customer: { first_name: '', last_name: '', phone: '', email: '', social_handle: '' },
-    pickup_date: CURRENT_PICKUP_DATE, pickup_time: '', pickup_window_id: '', payment_method: 'venmo', request_id: '',
+    pickup_date: CURRENT_PICKUP_DATE, pickup_time: '', pickup_window_id: '', payment_method: 'zelle', request_id: '',
   }
 }
 

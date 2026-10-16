@@ -24,7 +24,7 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
   const count = totalQuantity(draft.items)
   const lines = orderLines(draft.items, data.products)
   const total = orderTotal(lines)
-  const paymentRecipient = draft.payment_method === 'venmo' ? data.settings.venmo_handle : data.settings.zelle_recipient
+  const paymentRecipient = data.settings.zelle_recipient
 
   const setCustomer = (field: keyof typeof draft.customer, value: string) => {
     dispatch({ type: 'customer', field, value })
@@ -106,7 +106,6 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
             <section className="checkout-section panel" aria-labelledby="payment-heading">
               <SectionHeading number="03" eyebrow="After you place the order" id="payment-heading">Choose payment.</SectionHeading>
               <div className="payment-options">
-                {data.settings.venmo_handle && <PaymentOption value="venmo" selected={draft.payment_method === 'venmo'} label="Venmo" recipient={`@${data.settings.venmo_handle.replace(/^@/, '')}`} onSelect={() => dispatch({ type: 'payment', method: 'venmo' })} />}
                 {data.settings.zelle_recipient && <PaymentOption value="zelle" selected={draft.payment_method === 'zelle'} label="Zelle" recipient={data.settings.zelle_recipient} onSelect={() => dispatch({ type: 'payment', method: 'zelle' })} />}
               </div>
               {errors.payment_method && <p className="error-message" tabIndex={-1}>{errors.payment_method}</p>}

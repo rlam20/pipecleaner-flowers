@@ -55,7 +55,6 @@ export function restoreDraft(value: unknown): OrderDraft {
     if (typeof stored.pickup_time === 'string') base.pickup_time = stored.pickup_time
     if (typeof stored.pickup_window_id === 'string') base.pickup_window_id = stored.pickup_window_id
   }
-  if (stored.payment_method === 'zelle') base.payment_method = 'zelle'
   for (const key of Object.keys(base.customer) as (keyof CustomerDetails)[]) {
     if (typeof stored.customer?.[key] === 'string') base.customer[key] = stored.customer[key]
   }
