@@ -43,6 +43,7 @@ export type OrderDraft = {
   items: OrderItemInput[]
   packaging: Packaging
   card_message: string
+  order_notes: string
   customer: CustomerDetails
   pickup_date: string
   pickup_time: string
@@ -64,6 +65,7 @@ export type OrderReceipt = {
   order_type: 'snack' | 'party'
   packaging: Packaging
   card_message: string
+  order_notes: string
   total_cents: number
   pickup_date: string
   pickup_time: string

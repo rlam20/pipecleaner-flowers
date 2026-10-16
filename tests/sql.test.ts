@@ -10,6 +10,7 @@ const octoberMenuMigration = readFileSync(new URL('../supabase/migrations/202610
 const fulfillmentMigration = readFileSync(new URL('../supabase/migrations/202610150002_next_week_fulfillment.sql', import.meta.url), 'utf8')
 const fridayDeliveryMigration = readFileSync(new URL('../supabase/migrations/202610150005_friday_delivery_only.sql', import.meta.url), 'utf8')
 const sundayFulfillmentMigration = readFileSync(new URL('../supabase/migrations/202610160001_sunday_fulfillment.sql', import.meta.url), 'utf8')
+const orderNotesMigration = readFileSync(new URL('../supabase/migrations/202610160002_order_notes.sql', import.meta.url), 'utf8')
 const seed = readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8')
 type RpcResult = { success: boolean; code?: string; error?: string; created?: boolean; receipt?: OrderReceipt }
 let db: PGlite
@@ -19,7 +20,7 @@ function input(): CreateCookieOrderInput {
   return {
     request_id: crypto.randomUUID(),
     items: [{ product_id: 'spindle-and-spice', quantity: 4 }],
-    packaging: 'standard', card_message: '',
+    packaging: 'standard', card_message: '', order_notes: '',
     customer: { first_name: 'Test', last_name: 'Customer', phone: '+44 20 7946 0958', email: '', social_handle: '' },
     pickup_date: pickupDate, pickup_time: '12:30', pickup_window_id: 'oct-21-lawn-tabling', payment_method: 'venmo',
     expected_prices: [{ product_id: 'spindle-and-spice', unit_price_cents: 300 }],
@@ -45,6 +46,7 @@ beforeAll(async () => {
   await db.exec(fulfillmentMigration)
   await db.exec(fridayDeliveryMigration)
   await db.exec(sundayFulfillmentMigration)
+  await db.exec(orderNotesMigration)
 }, 60_000)
 
 beforeEach(async () => {
@@ -85,15 +87,17 @@ describe('cookie order database contract', () => {
     payload.customer.social_handle = 'TikTok: @test.customer'
     payload.packaging = 'card'
     payload.card_message = 'A little treat.'
+    payload.order_notes = 'Please call when you arrive.'
     expect((await submit(payload)).success).toBe(true)
     const { rows } = await db.query<Record<string, unknown>>('select * from public.cookie_orders where request_id = $1', [payload.request_id])
     expect(rows[0]).toMatchObject({
       customer_first_name: 'Test', customer_last_name: 'Customer', customer_phone: payload.customer.phone,
       customer_email: payload.customer.email, customer_social_handle: payload.customer.social_handle,
       pickup_window_id: 'oct-21-lawn-tabling', pickup_time: '12:30:00', time_zone: 'America/New_York',
-      card_message: 'A little treat.', payment_method: 'venmo', payment_recipient: 'juzaoi', status: 'awaiting_payment',
+      card_message: 'A little treat.', order_notes: 'Please call when you arrive.', payment_method: 'venmo', payment_recipient: 'juzaoi', status: 'awaiting_payment',
     })
     expect(rows[0].items).toEqual([{ product_id: 'spindle-and-spice', name: 'Spindle and Spice', quantity: 4, unit_price_cents: 300, line_total_cents: 1200 }])
+    expect(rows[0].receipt).toMatchObject({ order_notes: 'Please call when you arrive.' })
   })
 
   it.each([[3, 800], [4, 1100]])('saves the authoritative %i-cookie total', async (quantity, total) => {
@@ -194,6 +198,11 @@ describe('cookie order database contract', () => {
     expect(await submit({ ...input(), packaging: 'card', card_message: '  ' })).toMatchObject({ success: false, code: 'validation' })
     expect(await submit({ ...input(), packaging: 'card', card_message: 'x'.repeat(501) })).toMatchObject({ success: false, code: 'validation' })
     expect(await submit({ ...input(), card_message: 'A previous card draft' })).toMatchObject({ success: true, receipt: { card_message: '' } })
+  })
+
+  it('accepts optional order notes and rejects notes over 1,000 characters', async () => {
+    expect(await submit({ ...input(), order_notes: 'Leave with the front desk.' })).toMatchObject({ success: true, receipt: { order_notes: 'Leave with the front desk.' } })
+    expect(await submit({ ...input(), order_notes: 'x'.repeat(1001) })).toMatchObject({ success: false, code: 'validation' })
   })
 
   it('accepts October 21 and rejects dates outside the two fulfillment days', async () => {

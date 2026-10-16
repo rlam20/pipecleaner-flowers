@@ -9,6 +9,7 @@ export type OrderAction =
   | { type: 'quantity'; productId: string; quantity: number }
   | { type: 'packaging'; packaging: Packaging }
   | { type: 'message'; message: string }
+  | { type: 'orderNotes'; notes: string }
   | { type: 'customer'; field: keyof CustomerDetails; value: string }
   | { type: 'pickup'; date: string; time: string; windowId: string }
   | { type: 'payment'; method: PaymentMethod }
@@ -34,6 +35,7 @@ export function orderReducer(state: State, action: InternalAction): State {
     }
     case 'packaging': draft = { ...draft, packaging: action.packaging }; break
     case 'message': draft = { ...draft, card_message: action.message }; break
+    case 'orderNotes': draft = { ...draft, order_notes: action.notes }; break
     case 'customer': draft = { ...draft, customer: { ...draft.customer, [action.field]: action.value } }; break
     case 'pickup': draft = { ...draft, pickup_date: action.date, pickup_time: action.time, pickup_window_id: action.windowId }; break
     case 'payment': draft = { ...draft, payment_method: action.method }; break
@@ -48,7 +50,7 @@ export function restoreDraft(value: unknown): OrderDraft {
   if (Array.isArray(stored.items)) base.items = stored.items.filter(item => item && typeof item.product_id === 'string' && Number.isSafeInteger(item.quantity) && item.quantity > 0 && item.quantity <= MAX_FLAVOR_QUANTITY)
   if (totalQuantity(base.items) > MAX_ORDER_QUANTITY) base.items = []
   if (stored.packaging === 'card') base.packaging = 'card'
-  for (const key of ['card_message', 'request_id'] as const) {
+  for (const key of ['card_message', 'order_notes', 'request_id'] as const) {
     if (typeof stored[key] === 'string') base[key] = stored[key]
   }
   if (typeof stored.pickup_date === 'string' && FULFILLMENT_DATES.includes(stored.pickup_date as typeof FULFILLMENT_DATES[number])) {

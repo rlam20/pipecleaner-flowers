@@ -19,7 +19,7 @@ const data: StorefrontData = {
 
 function draft(overrides: Partial<OrderDraft> = {}): OrderDraft {
   return {
-    items: [{ product_id: 'matcha', quantity: 1 }], packaging: 'standard', card_message: '',
+    items: [{ product_id: 'matcha', quantity: 1 }], packaging: 'standard', card_message: '', order_notes: '',
     customer: { first_name: 'Ray', last_name: 'Customer', phone: '(555) 123-4567', email: '', social_handle: '' },
     pickup_date: '2026-10-21', pickup_time: '12:30', pickup_window_id: 'oct-21-lawn-tabling', payment_method: 'venmo', request_id: crypto.randomUUID(),
     ...overrides,
@@ -65,6 +65,11 @@ describe('cookie order helpers', () => {
   it('requires a card message and leaves standard packaging free', () => {
     expect(selectionErrors(draft({ packaging: 'card' }), data)).toHaveProperty('card_message')
     expect(selectionErrors(draft(), data)).not.toHaveProperty('card_message')
+  })
+
+  it('limits optional order notes to 1,000 characters', () => {
+    expect(selectionErrors(draft({ order_notes: 'Please call on arrival.' }), data)).not.toHaveProperty('order_notes')
+    expect(selectionErrors(draft({ order_notes: 'x'.repeat(1001) }), data)).toHaveProperty('order_notes')
   })
 
   it('rejects more than four of a flavor or ten cookies total', () => {

@@ -37,6 +37,7 @@
 .payment-option.is-selected > svg { opacity: 1; }
 .payment-note { display: flex; gap: 10px; align-items: flex-start; margin-top: 20px; color: var(--color-text-muted); font-size: 11px; }
 .payment-note svg { flex: 0 0 auto; color: var(--green-muted); }
+.order-notes-field { margin-top: 24px; }
 .final-review { display: flex; gap: 14px; padding: 19px 22px; background: var(--cream-soft); }
 .final-review > svg { color: var(--green-muted); flex: 0 0 auto; }
 .final-review strong { font-family: var(--font-heading); font-size: 14px; }

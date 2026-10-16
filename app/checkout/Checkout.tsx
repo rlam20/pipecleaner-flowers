@@ -110,6 +110,7 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
               </div>
               {errors.payment_method && <p className="error-message" tabIndex={-1}>{errors.payment_method}</p>}
               <p className="payment-note"><CreditCard size={16} />Payment is arranged after the order is saved. It stays marked “awaiting payment” until the business confirms it.</p>
+              <div className="order-notes-field"><Field label="Order notes" name="order_notes" optional error={errors.order_notes}><textarea className="input" id={fieldId('order_notes')} rows={4} maxLength={1000} value={draft.order_notes} onChange={event => dispatch({ type: 'orderNotes', notes: event.target.value })} aria-invalid={Boolean(errors.order_notes)} placeholder="Allergies, delivery details, or anything else we should know…" /></Field></div>
             </section>
 
             <section className="final-review panel"><Check size={18} /><div><strong>One last look</strong><p>{count} {count === 1 ? 'cookie' : 'cookies'} · {draft.packaging === 'card' ? 'Card with Note' : 'Standard packaging'} · {money(total)}</p></div></section>

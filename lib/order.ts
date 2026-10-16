@@ -71,7 +71,7 @@ export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[]
 
 export function emptyDraft(): OrderDraft {
   return {
-    items: [], packaging: 'standard', card_message: '',
+    items: [], packaging: 'standard', card_message: '', order_notes: '',
     customer: { first_name: '', last_name: '', phone: '', email: '', social_handle: '' },
     pickup_date: CURRENT_PICKUP_DATE, pickup_time: '', pickup_window_id: '', payment_method: 'zelle', request_id: '',
   }
@@ -90,6 +90,7 @@ export function selectionErrors(draft: OrderDraft, data: StorefrontData, now = n
   const total = orderTotal(orderLines(draft.items, data.products))
   if (!Number.isSafeInteger(total)) errors.order = 'This order is too large to calculate. Please reduce the quantity.'
   if (draft.packaging === 'card' && (!draft.card_message.trim() || draft.card_message.length > 500)) errors.card_message = 'Write a message of up to 500 characters for your card.'
+  if (draft.order_notes.trim().length > 1000) errors.order_notes = 'Keep order notes under 1,000 characters.'
   return errors
 }
 

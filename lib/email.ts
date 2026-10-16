@@ -36,6 +36,7 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
     `Order type: ${receipt.order_type === 'snack' ? 'Snack Pick Up' : 'Party Pack'}`,
     `Packaging: ${receipt.packaging === 'card' ? 'Card with Note (no charge)' : 'Standard'}`,
     receipt.card_message ? `Card message: ${receipt.card_message}` : '',
+    receipt.order_notes ? `Order notes: ${receipt.order_notes}` : '',
     `Total: ${currency(receipt.total_cents)}`, `Pickup: ${pickup}`, location,
     `Payment: ${payment}`, 'Status: Awaiting payment. Payment has not been verified.',
   ].filter((line) => line !== '').join('\n')
@@ -48,6 +49,7 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
     <ul>${lines.map((line) => `<li>${escapeHtml(line)}</li>`).join('')}</ul>
     <p>Packaging: ${receipt.packaging === 'card' ? 'Card with Note (no charge)' : 'Standard'}</p>
     ${receipt.card_message ? `<p><strong>Card message:</strong><br>${escapeHtml(receipt.card_message).replace(/\n/g, '<br>')}</p>` : ''}
+    ${receipt.order_notes ? `<p><strong>Order notes:</strong><br>${escapeHtml(receipt.order_notes).replace(/\n/g, '<br>')}</p>` : ''}
     <p><strong>Total: ${currency(receipt.total_cents)}</strong></p>
     <h3>Pickup</h3><p>${escapeHtml(pickup)}<br>${escapeHtml(location)}</p>
     <h3>Payment</h3><p>${escapeHtml(payment)}<br><strong>Awaiting payment</strong> — payment has not been verified.</p>

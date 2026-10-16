@@ -19,7 +19,7 @@ test('restores private checkout details from this tab without putting them in th
       receipt: null,
       draft: {
         items: [{ product_id: 'spindle-and-spice', quantity: 2 }],
-        packaging: 'card', card_message: 'A well-earned treat.',
+        packaging: 'card', card_message: 'A well-earned treat.', order_notes: '',
         customer: { first_name: 'Test', last_name: 'Customer', phone: '(555) 123-4567', email: 'test@example.com', social_handle: '@test' },
         pickup_date: '', pickup_time: '', pickup_window_id: '', payment_method: 'venmo',
         request_id: '11111111-1111-4111-8111-111111111111',
