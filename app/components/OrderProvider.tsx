@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
-import { CURRENT_PICKUP_DATE, MAX_FLAVOR_QUANTITY, MAX_ORDER_QUANTITY, emptyDraft, totalQuantity } from '@/lib/order'
+import { FULFILLMENT_DATES, MAX_FLAVOR_QUANTITY, MAX_ORDER_QUANTITY, emptyDraft, totalQuantity } from '@/lib/order'
 import type { CustomerDetails, OrderDraft, OrderReceipt, Packaging, PaymentMethod } from '@/lib/types'
 
 export const STORAGE_KEY = 'dough-not-disturb.order.v3'
@@ -51,7 +51,8 @@ export function restoreDraft(value: unknown): OrderDraft {
   for (const key of ['card_message', 'request_id'] as const) {
     if (typeof stored[key] === 'string') base[key] = stored[key]
   }
-  if (stored.pickup_date === CURRENT_PICKUP_DATE) {
+  if (typeof stored.pickup_date === 'string' && FULFILLMENT_DATES.includes(stored.pickup_date as typeof FULFILLMENT_DATES[number])) {
+    base.pickup_date = stored.pickup_date
     if (typeof stored.pickup_time === 'string') base.pickup_time = stored.pickup_time
     if (typeof stored.pickup_window_id === 'string') base.pickup_window_id = stored.pickup_window_id
   }

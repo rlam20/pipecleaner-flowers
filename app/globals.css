@@ -39,7 +39,7 @@
 
 * { box-sizing: border-box; }
 html { font-size: 16px; scroll-behavior: smooth; scroll-padding-top: 28px; }
-body { margin: 0; background: radial-gradient(circle at 82% 4%, rgb(104 45 82 / 16%), transparent 32rem), var(--color-background); color: var(--color-text); color-scheme: dark; font-family: var(--font-body); -webkit-font-smoothing: antialiased; line-height: 1.6; }
+body { position: relative; isolation: isolate; margin: 0; background: radial-gradient(circle at 82% 4%, rgb(104 45 82 / 16%), transparent 32rem), var(--color-background); color: var(--color-text); color-scheme: dark; font-family: var(--font-body); -webkit-font-smoothing: antialiased; line-height: 1.6; }
 h1, h2, h3, h4, p { margin: 0; }
 h1, h2, h3, h4 { font-family: var(--font-heading); font-weight: 400; }
 button, input, textarea, select { font: inherit; }
@@ -56,6 +56,11 @@ em { font-weight: inherit; }
 .page-shell { width: min(calc(100% - 112px), var(--content-width)); margin-inline: auto; }
 .skip-link { position: fixed; z-index: 100; top: 8px; left: 8px; background: var(--color-surface); padding: 12px 18px; transform: translateY(-150%); }
 .skip-link:focus { transform: translateY(0); }
+.site-spiders { position: absolute; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; }
+.site-spider { position: absolute; width: 52px; height: auto; opacity: .5; filter: invert(91%) sepia(13%) saturate(454%) hue-rotate(344deg) brightness(104%); }
+.site-spider-one { top: 112px; right: 2px; transform: rotate(7deg); }
+.site-spider-two { top: 48%; left: 2px; transform: rotate(-18deg); opacity: .35; }
+.site-spider-three { right: 2px; bottom: 24px; transform: rotate(16deg); opacity: .4; }
 .announcement { background: var(--green-deep); color: var(--cream); font-size: 11px; letter-spacing: .07em; text-align: center; padding: 9px 20px; }
 .site-header { min-height: 98px; display: flex; align-items: center; justify-content: space-between; gap: 30px; border-bottom: 1px solid var(--color-border); }
 .wordmark { font-family: var(--font-heading); font-size: 26px; letter-spacing: -1.2px; white-space: nowrap; line-height: 1.2; }
@@ -238,6 +243,9 @@ textarea.input { resize: vertical; }
   .site-footer { align-items: start; }
   .footer-links { gap: 6px 20px; }
   .footer-links > span { width: 100%; text-align: right; }
+}
+@media (max-width: 1199px) {
+  .site-spiders { display: none; }
 }
 @media (max-width: 759px) {
   .announcement { font-size: 9px; padding-inline: 15px; }

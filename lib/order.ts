@@ -1,6 +1,6 @@
 import type { CookieProduct, OrderDraft, OrderItemInput, OrderLine, PickupSlot, PickupWindow, StorefrontData } from './types'
 
-export const FULFILLMENT_DATES = ['2026-10-21', '2026-10-23', '2026-10-24'] as const
+export const FULFILLMENT_DATES = ['2026-10-21', '2026-10-23', '2026-10-25'] as const
 export const CURRENT_PICKUP_DATE = FULFILLMENT_DATES[0]
 export const ORDER_CUTOFF = new Date('2026-10-21T00:00:00Z')
 export const FUNDRAISER_MODE = true

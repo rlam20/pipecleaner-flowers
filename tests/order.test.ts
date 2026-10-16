@@ -12,7 +12,8 @@ const data: StorefrontData = {
   windows: [
     { id: 'oct-21-lawn-tabling', day_of_week: 3, start_time: '12:30', end_time: '15:30', slot_minutes: 30, active: true },
     { id: 'oct-23-delivery', day_of_week: 5, start_time: '15:30', end_time: '18:30', slot_minutes: 30, active: true },
-    { id: 'oct-24-delivery', day_of_week: 6, start_time: '09:00', end_time: '14:30', slot_minutes: 30, active: true },
+    { id: 'oct-25-delivery', day_of_week: 0, start_time: '09:00', end_time: '14:30', slot_minutes: 30, active: true },
+    { id: 'oct-25-pickup', day_of_week: 0, start_time: '14:00', end_time: '19:30', slot_minutes: 30, active: true },
   ],
 }
 
@@ -52,7 +53,7 @@ describe('cookie order helpers', () => {
   it('creates start-inclusive, end-exclusive pickup slots', () => {
     expect(pickupSlots('2026-10-21', data.windows).map(slot => slot.label)).toEqual(['Lawn tabling · 12:30 PM', 'Lawn tabling · 1:00 PM', 'Lawn tabling · 1:30 PM', 'Lawn tabling · 2:00 PM', 'Lawn tabling · 2:30 PM', 'Lawn tabling · 3:00 PM'])
     expect(pickupSlots('2026-10-23', data.windows).map(slot => slot.label)).toEqual(['Delivery · 3:30 PM', 'Delivery · 4:00 PM', 'Delivery · 4:30 PM', 'Delivery · 5:00 PM', 'Delivery · 5:30 PM', 'Delivery · 6:00 PM'])
-    expect(pickupSlots('2026-10-24', data.windows).map(slot => slot.time)).toEqual(['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00'])
+    expect(pickupSlots('2026-10-25', data.windows).map(slot => slot.label)).toEqual(['Delivery · 9:00 AM', 'Delivery · 9:30 AM', 'Delivery · 10:00 AM', 'Delivery · 10:30 AM', 'Delivery · 11:00 AM', 'Delivery · 11:30 AM', 'Delivery · 12:00 PM', 'Delivery · 12:30 PM', 'Delivery · 1:00 PM', 'Delivery · 1:30 PM', 'Delivery · 2:00 PM', 'Pickup · 2:00 PM', 'Pickup · 2:30 PM', 'Pickup · 3:00 PM', 'Pickup · 3:30 PM', 'Pickup · 4:00 PM', 'Pickup · 4:30 PM', 'Pickup · 5:00 PM', 'Pickup · 5:30 PM', 'Pickup · 6:00 PM', 'Pickup · 6:30 PM', 'Pickup · 7:00 PM'])
     expect(pickupSlots('2026-10-22', data.windows)).toEqual([])
   })
 
