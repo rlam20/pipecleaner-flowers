@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowRight, ArrowUpRight, Check, Gift, Minus, Plus, Sparkle } from 'lucide-react'
 import type { CookieProduct, StorefrontData } from '@/lib/types'
-import { money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
+import { MAX_FLAVOR_QUANTITY, MAX_ORDER_QUANTITY, isOrderingOpen, money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
 import { useOrder } from './OrderProvider'
 import OrderSummary from './OrderSummary'
 import SiteHeader from './SiteHeader'
@@ -13,6 +13,7 @@ import SiteFooter from './SiteFooter'
 function CookieCard({ product, index, available }: { product: CookieProduct; index: number; available: boolean }) {
   const { draft, dispatch, hydrated } = useOrder()
   const quantity = draft.items.find(item => item.product_id === product.id)?.quantity ?? 0
+  const atOrderLimit = totalQuantity(draft.items) >= MAX_ORDER_QUANTITY
   const setQuantity = (value: number) => dispatch({ type: 'quantity', productId: product.id, quantity: value })
   return (
     <article className={`cookie-card${quantity ? ' cookie-selected' : ''}`}>
@@ -28,7 +29,7 @@ function CookieCard({ product, index, available }: { product: CookieProduct; ind
         <div className="quantity-control" role="group" aria-label={`${product.name} quantity`}>
           <button type="button" aria-label={`Remove one ${product.name}`} disabled={!available || !hydrated || quantity === 0} onClick={() => setQuantity(quantity - 1)}><Minus size={15} aria-hidden="true" /></button>
           <output aria-label={`${product.name} in bag`} aria-live="polite">{quantity}</output>
-          <button type="button" aria-label={`Add one ${product.name}`} disabled={!available || !hydrated} onClick={() => setQuantity(quantity + 1)}><Plus size={15} aria-hidden="true" /></button>
+          <button type="button" aria-label={`Add one ${product.name}`} title={atOrderLimit || quantity >= MAX_FLAVOR_QUANTITY ? 'Limit reached. Need more? DM @doughnotdisturb_jz on Instagram.' : undefined} disabled={!available || !hydrated || atOrderLimit || quantity >= MAX_FLAVOR_QUANTITY} onClick={() => setQuantity(quantity + 1)}><Plus size={15} aria-hidden="true" /></button>
         </div>
       </div>
     </article>
@@ -38,10 +39,11 @@ function CookieCard({ product, index, available }: { product: CookieProduct; ind
 export default function Storefront({ data }: { data: StorefrontData }) {
   const { draft, dispatch, hydrated } = useOrder()
   const count = totalQuantity(draft.items)
+  const orderingOpen = isOrderingOpen()
   const lines = orderLines(draft.items, data.products)
   const total = orderTotal(lines)
   const needsNote = draft.packaging === 'card' && !draft.card_message.trim()
-  const canCheckout = hydrated && data.available && count > 0 && !needsNote
+  const canCheckout = hydrated && data.available && orderingOpen && count > 0 && !needsNote
 
   return (
     <div className="storefront">
@@ -56,7 +58,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
             <div className="hero-small-note"><span className="tiny-star">✳</span> A little something worth slowing down for.</div>
           </div>
           <div className="hero-visual">
-            <div className="hero-photo"><Image src="/cookies/hero.webp" alt="A warm, inviting assortment of cookies on a ceramic plate" fill priority sizes="(max-width: 759px) 92vw, 49vw" /></div>
+            <div className="hero-photo hero-menu"><Image src="/cookies/october-menu.png" alt="DoughNotDisturb October cookie menu" fill priority sizes="(max-width: 759px) 92vw, 49vw" /></div>
             <div className="hero-seal" aria-hidden="true"><Sparkle size={16} strokeWidth={1.1} /><span>do not<br /><em>disturb.</em></span><small>COOKIE BREAK</small></div>
             <p className="photo-caption"><span>Made for your little moments.</span><span>Enjoy every crumb.</span></p>
           </div>
@@ -69,19 +71,21 @@ export default function Storefront({ data }: { data: StorefrontData }) {
             <div><p className="eyebrow">01 / The cookie counter</p><h2 id="menu-heading">Meet your next<br /><em>little obsession.</em></h2></div>
             <p>One for the moment. A few for later.<br />Mix your favorites and make it yours.</p>
           </div>
-          {!data.available && <div className="store-notice" role="status"><strong>The cookie counter is getting ready.</strong><p>Take a look around. Online ordering is temporarily unavailable; please check back soon.</p></div>}
+          {(!data.available || !orderingOpen) && <div className="store-notice" role="status"><strong>{orderingOpen ? 'The cookie counter is getting ready.' : 'Preorders are closed.'}</strong><p>{orderingOpen ? 'Take a look around. Online ordering is temporarily unavailable; please check back soon.' : 'Preorders closed Tuesday, October 20 at 8:00 p.m.'}</p></div>}
           <div className="order-layout">
             <div className="order-builder">
               <div className="cookie-grid">
-                {data.products.map((product, index) => <CookieCard product={product} index={index} available={data.available} key={product.id} />)}
+                {data.products.map((product, index) => <CookieCard product={product} index={index} available={data.available && orderingOpen} key={product.id} />)}
               </div>
               <div className="quantity-explainer">
                 <p>A little treat or a reason to gather?</p>
                 <ul>
                   <li><Sparkle size={14} aria-hidden="true" /><strong>1–6 cookies: Snack Pick Up.</strong></li>
                   <li><Sparkle size={14} aria-hidden="true" /><strong>7 or more: Party Pack.</strong></li>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>3 cookies: $8.</strong></li>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>5 cookies: $13.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Every 3 cookies: $1 off.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Every 5 cookies: $2 off.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>10-cookie order maximum.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Reached a limit? DM @doughnotdisturb_jz.</strong></li>
                 </ul>
               </div>
               <fieldset className="packaging-section" disabled={!data.available}>

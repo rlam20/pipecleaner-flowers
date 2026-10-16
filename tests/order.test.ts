@@ -9,14 +9,17 @@ const data: StorefrontData = {
     { id: 'mango', name: 'Mango', description: '', image_url: '', unit_price_cents: 500, sort_order: 2, active: true },
   ],
   settings: { time_zone: 'America/New_York', pickup_location: null, venmo_handle: 'juzaoi', zelle_recipient: null, instagram_url: null },
-  windows: [{ id: 'oct-9-2026', day_of_week: 5, start_time: '11:00', end_time: '17:30', slot_minutes: 30, active: true }],
+  windows: [
+    { id: 'oct-21-lawn-tabling', day_of_week: 3, start_time: '12:30', end_time: '15:30', slot_minutes: 30, active: true },
+    { id: 'oct-23-delivery', day_of_week: 5, start_time: '15:30', end_time: '19:30', slot_minutes: 30, active: true },
+  ],
 }
 
 function draft(overrides: Partial<OrderDraft> = {}): OrderDraft {
   return {
     items: [{ product_id: 'matcha', quantity: 1 }], packaging: 'standard', card_message: '',
     customer: { first_name: 'Ray', last_name: 'Customer', phone: '(555) 123-4567', email: '', social_handle: '' },
-    pickup_date: '2026-10-09', pickup_time: '11:00', pickup_window_id: 'oct-9-2026', payment_method: 'venmo', request_id: crypto.randomUUID(),
+    pickup_date: '2026-10-21', pickup_time: '12:30', pickup_window_id: 'oct-21-lawn-tabling', payment_method: 'venmo', request_id: crypto.randomUUID(),
     ...overrides,
   }
 }
@@ -34,21 +37,21 @@ describe('cookie order helpers', () => {
     ])
   })
 
-  it('applies the trio and five-cookie deal only at their exact quantities', () => {
+  it('applies five-cookie groups first, then three-cookie groups', () => {
     const priced = (quantity: number) => orderTotal(orderLines([{ product_id: 'matcha', quantity }], data.products))
     expect(priced(2)).toBe(800)
-    expect(priced(3)).toBe(800)
-    expect(priced(4)).toBe(1600)
-    expect(priced(5)).toBe(1300)
-    expect(priced(6)).toBe(2400)
+    expect(priced(3)).toBe(1100)
+    expect(priced(4)).toBe(1500)
+    expect(priced(5)).toBe(1800)
+    expect(priced(6)).toBe(2200)
+    expect(priced(8)).toBe(2900)
+    expect(priced(10)).toBe(3600)
   })
 
   it('creates start-inclusive, end-exclusive pickup slots', () => {
-    expect(pickupSlots('2026-10-09', data.windows).map(slot => slot.time)).toEqual([
-      '11:00', '11:30', '12:00', '12:30', '13:00', '13:30',
-      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30', '17:00',
-    ])
-    expect(pickupSlots('2026-10-16', data.windows)).toEqual([])
+    expect(pickupSlots('2026-10-21', data.windows).map(slot => slot.time)).toEqual(['12:30', '13:00', '13:30', '14:00', '14:30', '15:00'])
+    expect(pickupSlots('2026-10-23', data.windows).map(slot => slot.time)).toEqual(['15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00'])
+    expect(pickupSlots('2026-10-22', data.windows)).toEqual([])
   })
 
   it('adds two local calendar days across month and daylight-saving boundaries', () => {
@@ -61,9 +64,16 @@ describe('cookie order helpers', () => {
     expect(selectionErrors(draft(), data)).not.toHaveProperty('card_message')
   })
 
+  it('rejects more than four of a flavor or ten cookies total', () => {
+    expect(selectionErrors(draft({ items: [{ product_id: 'matcha', quantity: 5 }] }), data)).toHaveProperty('order')
+    expect(selectionErrors(draft({ items: [{ product_id: 'matcha', quantity: 6 }, { product_id: 'mango', quantity: 5 }] }), data)).toHaveProperty('order')
+  })
+
   it('validates required contact, payment, lead time, and exact pickup slot', () => {
-    expect(validateDraft(draft(), data)).toEqual({})
-    const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '11:15' }), data)
+    const beforeCutoff = new Date('2026-10-20T23:59:00Z')
+    expect(validateDraft(draft(), data, beforeCutoff)).toEqual({})
+    const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '12:45' }), data, beforeCutoff)
     expect(errors).toMatchObject({ first_name: expect.any(String), last_name: expect.any(String), phone: expect.any(String), email: expect.any(String), pickup_time: expect.any(String) })
+    expect(validateDraft(draft(), data, new Date('2026-10-21T00:00:01Z'))).toHaveProperty('order')
   })
 })

@@ -6,29 +6,24 @@ import type { CookieProduct, PickupWindow, StorefrontData, StoreSettings } from 
 // Presentation fallback only. Orders require a successfully loaded Supabase catalog.
 const fallbackProducts: CookieProduct[] = [
   {
-    id: 'matcha-neapolitan', name: 'Matcha Neapolitan',
-    description: 'Three lovely layers. Earthy matcha, strawberry, and vanilla in one soft-baked cookie.',
-    image_url: '/cookies/matcha.webp', unit_price_cents: 300, sort_order: 1, active: true,
+    id: 'spindle-and-spice', name: 'Spindle and Spice',
+    description: 'A soft cinnamon-butter cookie swirled with gooey cinnamon filling, topped with vanilla glaze and a spooky marshmallow spiderweb.',
+    image_url: '/cookies/spindle-and-spice.png', unit_price_cents: 300, sort_order: 1, active: true,
   },
   {
-    id: 'biscoff-chai', name: 'Biscoff Chai',
-    description: 'A little spice, a little crunch. Chai warmth meets caramelized Biscoff.',
-    image_url: '/cookies/biscoff.webp', unit_price_cents: 300, sort_order: 2, active: true,
+    id: 'draculas-kiss', name: 'Dracula’s Kiss',
+    description: 'A rich chocolate cookie with a blood-red raspberry center and chocolate drizzle. Love at first bite.',
+    image_url: '/cookies/draculas-kiss.png', unit_price_cents: 300, sort_order: 2, active: true,
   },
   {
-    id: 'mango-lassi', name: 'Mango Lassi',
-    description: 'A sunny little escape. Mango and creamy tang, inspired by a favorite sip.',
-    image_url: '/cookies/mango.webp', unit_price_cents: 300, sort_order: 3, active: true,
+    id: 'coraline-cheesecake', name: 'Coraline Cheesecake',
+    description: 'A dark chocolate cookie with a creamy cheesecake center, purple drizzle, and golden stars.',
+    image_url: '/cookies/coraline-cheesecake.png', unit_price_cents: 300, sort_order: 3, active: true,
   },
   {
-    id: 'pumpkin-cheesecake', name: 'Pumpkin Cheesecake',
-    description: 'Warm pumpkin spice wrapped around a rich, creamy cheesecake center.',
-    image_url: '/cookies/pumpkin-cheesecake-v2.png', unit_price_cents: 300, sort_order: 4, active: true,
-  },
-  {
-    id: 'banana-bread-snickerdoodle', name: 'Banana Bread Snickerdoodle',
-    description: 'Cozy banana bread flavor rolled in the cinnamon-sugar warmth of a snickerdoodle.',
-    image_url: '/cookies/banana-bread-snickerdoodle-v2.png', unit_price_cents: 300, sort_order: 5, active: true,
+    id: 'mummys-favorite', name: 'Mummy’s Favorite',
+    description: 'A warm chai-spiced Biscoff cookie loaded with white chocolate chips and wrapped in a mummy-inspired white chocolate drizzle.',
+    image_url: '/cookies/mummys-favorite.png', unit_price_cents: 300, sort_order: 4, active: true,
   },
 ]
 

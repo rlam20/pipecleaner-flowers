@@ -1,0 +1,97 @@
+-- Opens next-week tabling and delivery slots and closes preorders Tuesday at 8 p.m. Eastern.
+begin;
+
+update public.cookie_pickup_windows set active = false;
+
+insert into public.cookie_pickup_windows
+  (id, day_of_week, start_time, end_time, slot_minutes, active)
+values
+  ('oct-21-lawn-tabling', 3, '12:30', '15:30', 30, true),
+  ('oct-23-delivery', 5, '15:30', '19:30', 30, true)
+on conflict (id) do update set
+  day_of_week = excluded.day_of_week,
+  start_time = excluded.start_time,
+  end_time = excluded.end_time,
+  slot_minutes = excluded.slot_minutes,
+  active = true;
+
+create or replace function public.submit_cookie_order(payload jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  v_result jsonb;
+  v_submission jsonb;
+  v_quantity integer;
+  v_deal_total integer;
+  v_actual_date text;
+  v_synthetic_date text;
+begin
+  if payload is null or pg_catalog.jsonb_typeof(payload) <> 'object' then
+    return pg_catalog.jsonb_build_object('success', false, 'code', 'validation', 'error', 'Please review your order and try again.');
+  end if;
+
+  if (current_timestamp at time zone 'America/New_York') > timestamp '2026-10-20 20:00:00' then
+    return pg_catalog.jsonb_build_object('success', false, 'code', 'unavailable', 'error', 'Preorders closed Tuesday, October 20 at 8:00 PM.');
+  end if;
+
+  v_actual_date := payload->>'pickup_date';
+  v_synthetic_date := case v_actual_date
+    when '2026-10-21' then '2099-01-07'
+    when '2026-10-23' then '2099-01-02'
+    else null
+  end;
+  if v_synthetic_date is null then
+    return pg_catalog.jsonb_build_object('success', false, 'code', 'validation', 'error', 'Choose Wednesday, October 21 or Friday, October 23.');
+  end if;
+
+  -- Use a matching far-future weekday only while calling the legacy validator,
+  -- then restore the advertised fulfillment date inside this transaction.
+  v_submission := pg_catalog.jsonb_set(payload, '{pickup_date}', pg_catalog.to_jsonb(v_synthetic_date));
+  v_result := public.submit_cookie_order_with_standard_availability(v_submission);
+
+  if coalesce((v_result->>'success')::boolean, false)
+    and coalesce((v_result->>'created')::boolean, false) then
+    select coalesce(sum((item->>'quantity')::integer), 0)
+      into v_quantity
+      from pg_catalog.jsonb_array_elements(payload->'items') as selected(item);
+
+    if exists (
+      select 1 from pg_catalog.jsonb_array_elements(payload->'items') as selected(item)
+      where (item->>'quantity')::integer > 4
+    ) then
+      delete from public.cookie_orders where request_id = (payload->>'request_id')::uuid;
+      return pg_catalog.jsonb_build_object('success', false, 'code', 'validation', 'error', 'Each flavor is limited to 4 cookies. Need more? DM @doughnotdisturb_jz on Instagram.');
+    end if;
+
+    if v_quantity > 10 then
+      delete from public.cookie_orders where request_id = (payload->>'request_id')::uuid;
+      return pg_catalog.jsonb_build_object('success', false, 'code', 'validation', 'error', 'Orders are limited to 10 cookies. Need more? DM @doughnotdisturb_jz on Instagram.');
+    end if;
+
+    v_deal_total := ((v_result#>>'{receipt,total_cents}')::integer
+      - ((v_quantity / 5) * 200)
+      - (((v_quantity % 5) / 3) * 100));
+
+    update public.cookie_orders
+    set pickup_date = v_actual_date::date,
+        total_cents = v_deal_total,
+        receipt = pg_catalog.jsonb_set(
+          pg_catalog.jsonb_set(receipt, '{pickup_date}', pg_catalog.to_jsonb(v_actual_date)),
+          '{total_cents}', pg_catalog.to_jsonb(v_deal_total)
+        )
+    where request_id = (payload->>'request_id')::uuid
+    returning pg_catalog.jsonb_build_object('success', true, 'receipt', receipt, 'created', true)
+      into v_result;
+  end if;
+
+  return v_result;
+end;
+$$;
+
+revoke all on function public.submit_cookie_order(jsonb) from public, anon, authenticated;
+grant execute on function public.submit_cookie_order(jsonb) to anon, authenticated;
+
+commit;

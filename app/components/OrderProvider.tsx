@@ -1,10 +1,10 @@
 'use client'
 
 import { createContext, useContext, useEffect, useReducer, type ReactNode } from 'react'
-import { CURRENT_PICKUP_DATE, emptyDraft } from '@/lib/order'
+import { CURRENT_PICKUP_DATE, MAX_FLAVOR_QUANTITY, MAX_ORDER_QUANTITY, emptyDraft, totalQuantity } from '@/lib/order'
 import type { CustomerDetails, OrderDraft, OrderReceipt, Packaging, PaymentMethod } from '@/lib/types'
 
-export const STORAGE_KEY = 'dough-not-disturb.order.v1'
+export const STORAGE_KEY = 'dough-not-disturb.order.v3'
 export type OrderAction =
   | { type: 'quantity'; productId: string; quantity: number }
   | { type: 'packaging'; packaging: Packaging }
@@ -25,9 +25,10 @@ export function orderReducer(state: State, action: InternalAction): State {
   let draft = state.draft
   switch (action.type) {
     case 'quantity': {
-      if (!Number.isSafeInteger(action.quantity) || action.quantity < 0 || action.quantity > 2147483647) return state
+      if (!Number.isSafeInteger(action.quantity) || action.quantity < 0 || action.quantity > MAX_FLAVOR_QUANTITY) return state
       const items = draft.items.filter(item => item.product_id !== action.productId)
       if (action.quantity > 0) items.push({ product_id: action.productId, quantity: action.quantity })
+      if (totalQuantity(items) > MAX_ORDER_QUANTITY) return state
       draft = { ...draft, items }
       break
     }
@@ -44,7 +45,8 @@ export function restoreDraft(value: unknown): OrderDraft {
   const base = emptyDraft()
   if (!value || typeof value !== 'object') return base
   const stored = value as Partial<OrderDraft>
-  if (Array.isArray(stored.items)) base.items = stored.items.filter(item => item && typeof item.product_id === 'string' && Number.isSafeInteger(item.quantity) && item.quantity > 0 && item.quantity <= 2147483647)
+  if (Array.isArray(stored.items)) base.items = stored.items.filter(item => item && typeof item.product_id === 'string' && Number.isSafeInteger(item.quantity) && item.quantity > 0 && item.quantity <= MAX_FLAVOR_QUANTITY)
+  if (totalQuantity(base.items) > MAX_ORDER_QUANTITY) base.items = []
   if (stored.packaging === 'card') base.packaging = 'card'
   for (const key of ['card_message', 'request_id'] as const) {
     if (typeof stored[key] === 'string') base[key] = stored[key]
@@ -71,7 +73,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     let receipt: OrderReceipt | null = null
     try {
       const stored = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || 'null')
-      if (stored?.version === 1) {
+      if (stored?.version === 3) {
         draft = restoreDraft(stored.draft)
         if (stored.receipt?.status === 'awaiting_payment' && typeof stored.receipt.order_number === 'string' && Array.isArray(stored.receipt.items) && Number.isSafeInteger(stored.receipt.total_cents)) receipt = stored.receipt
       }
@@ -80,7 +82,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
   }, [])
   useEffect(() => {
     if (!state.hydrated) return
-    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, draft: state.draft, receipt: state.receipt })) } catch { /* Keep the current tab usable if storage is blocked. */ }
+    try { sessionStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 3, draft: state.draft, receipt: state.receipt })) } catch { /* Keep the current tab usable if storage is blocked. */ }
   }, [state])
   return <OrderContext.Provider value={{ ...state, dispatch, completeOrder: receipt => dispatch({ type: 'complete', receipt }), startNewOrder: () => dispatch({ type: 'reset' }) }}>{children}</OrderContext.Provider>
 }

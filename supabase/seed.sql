@@ -5,11 +5,10 @@ begin;
 insert into public.cookie_products
   (id, name, description, image_url, unit_price_cents, sort_order)
 values
-  ('matcha-neapolitan', 'Matcha Neapolitan', 'Three lovely layers. Earthy matcha, strawberry, and vanilla in one soft-baked cookie.', '/cookies/matcha.webp', 300, 1),
-  ('biscoff-chai', 'Biscoff Chai', 'A little spice, a little crunch. Chai warmth meets caramelized Biscoff.', '/cookies/biscoff.webp', 300, 2),
-  ('mango-lassi', 'Mango Lassi', 'A sunny little escape. Mango and creamy tang, inspired by a favorite sip.', '/cookies/mango.webp', 300, 3),
-  ('pumpkin-cheesecake', 'Pumpkin Cheesecake', 'Warm pumpkin spice wrapped around a rich, creamy cheesecake center.', '/cookies/pumpkin-cheesecake-v2.png', 300, 4),
-  ('banana-bread-snickerdoodle', 'Banana Bread Snickerdoodle', 'Cozy banana bread flavor rolled in the cinnamon-sugar warmth of a snickerdoodle.', '/cookies/banana-bread-snickerdoodle-v2.png', 300, 5)
+  ('spindle-and-spice', 'Spindle and Spice', 'A soft cinnamon-butter cookie swirled with gooey cinnamon filling, topped with vanilla glaze and a spooky marshmallow spiderweb.', '/cookies/spindle-and-spice.png', 300, 1),
+  ('draculas-kiss', 'Dracula''s Kiss', 'A rich chocolate cookie with a blood-red raspberry center and chocolate drizzle. Love at first bite.', '/cookies/draculas-kiss.png', 300, 2),
+  ('coraline-cheesecake', 'Coraline Cheesecake', 'A dark chocolate cookie with a creamy cheesecake center, purple drizzle, and golden stars.', '/cookies/coraline-cheesecake.png', 300, 3),
+  ('mummys-favorite', 'Mummy''s Favorite', 'A warm chai-spiced Biscoff cookie loaded with white chocolate chips and wrapped in a mummy-inspired white chocolate drizzle.', '/cookies/mummys-favorite.png', 300, 4)
 on conflict (id) do nothing;
 
 insert into public.cookie_store_settings

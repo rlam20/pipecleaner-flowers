@@ -11,7 +11,7 @@ export default function SiteHeader({ checkout = false }: { checkout?: boolean })
 
   return (
     <>
-      <div className="announcement">NOTE: ALL ORDERS PLACED FROM NOW UNTIL 10/7 11:59PM WILL BE AVAILABLE FOR PICKUP ON 10/9</div>
+      <div className="announcement">PREORDERS CLOSE TUESDAY 10/20 AT 8PM · TABLING WEDNESDAY 10/21 · DELIVERY FRIDAY 10/23</div>
       <header className="site-header page-shell">
         <Link className="wordmark" href="/" aria-label="DoughNotDisturb home">Dough<span>Not</span>Disturb<span className="wordmark-period">.</span></Link>
         {checkout ? (

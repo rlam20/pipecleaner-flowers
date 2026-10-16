@@ -34,7 +34,7 @@ export default function OrderSummary({ products, compact = false, children }: { 
             ))}
           </ul>
           <div className="summary-packaging"><span><Gift size={16} strokeWidth={1.4} aria-hidden="true" />{draft.packaging === 'card' ? 'Card with Note' : 'Standard packaging'}</span><span>Included</span></div>
-          {total < subtotal && <div className="summary-packaging"><span>{count === 3 ? 'Trio deal' : '5-cookie deal'}</span><span>−{money(subtotal - total)}</span></div>}
+          {total < subtotal && <div className="summary-packaging"><span>Cookie deal</span><span>−{money(subtotal - total)}</span></div>}
           {draft.packaging === 'card' && draft.card_message.trim() && <p className="summary-note">“{draft.card_message}”</p>}
         </>
       )}

@@ -59,7 +59,29 @@ begin
     select coalesce(sum((item->>'quantity')::integer), 0)
       into v_quantity
       from pg_catalog.jsonb_array_elements(payload->'items') as selected(item);
-    v_deal_total := case v_quantity when 3 then 800 when 5 then 1300 else null end;
+    if exists (
+      select 1
+      from pg_catalog.jsonb_array_elements(payload->'items') as selected(item)
+      where (item->>'quantity')::integer > 4
+    ) then
+      delete from public.cookie_orders where request_id = (payload->>'request_id')::uuid;
+      return pg_catalog.jsonb_build_object(
+        'success', false,
+        'code', 'validation',
+        'error', 'Each flavor is limited to 4 cookies. Need more? DM @doughnotdisturb_jz on Instagram.'
+      );
+    end if;
+    if v_quantity > 10 then
+      delete from public.cookie_orders where request_id = (payload->>'request_id')::uuid;
+      return pg_catalog.jsonb_build_object(
+        'success', false,
+        'code', 'validation',
+        'error', 'Orders are limited to 10 cookies. Need more? DM @doughnotdisturb_jz on Instagram.'
+      );
+    end if;
+    v_deal_total := ((v_result#>>'{receipt,total_cents}')::integer
+      - ((v_quantity / 5) * 200)
+      - (((v_quantity % 5) / 3) * 100));
     if v_deal_total is not null then
       update public.cookie_orders
       set pickup_date = '2026-10-09',

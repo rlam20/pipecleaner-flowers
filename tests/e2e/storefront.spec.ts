@@ -14,10 +14,10 @@ test('renders the complete storefront without horizontal overflow', async ({ pag
 test('restores private checkout details from this tab without putting them in the URL', async ({ page }) => {
   await page.addInitScript(() => {
     sessionStorage.setItem('dough-not-disturb.order.v1', JSON.stringify({
-      version: 1,
+      version: 3,
       receipt: null,
       draft: {
-        items: [{ product_id: 'matcha-neapolitan', quantity: 2 }],
+        items: [{ product_id: 'spindle-and-spice', quantity: 2 }],
         packaging: 'card', card_message: 'A well-earned treat.',
         customer: { first_name: 'Test', last_name: 'Customer', phone: '(555) 123-4567', email: 'test@example.com', social_handle: '@test' },
         pickup_date: '', pickup_time: '', pickup_window_id: '', payment_method: 'venmo',

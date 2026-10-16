@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, CreditCard, Gift, MapPin, PartyPopper } from 'lucide-react'
 import { createCookieOrder } from '@/lib/actions/orders'
-import { CURRENT_PICKUP_DATE, FUNDRAISER_MODE, formatDate, formatTime, money, orderLines, orderTotal, pickupSlots, totalQuantity, validateDraft } from '@/lib/order'
+import { FULFILLMENT_DATES, FUNDRAISER_MODE, formatDate, formatTime, money, orderLines, orderTotal, pickupSlots, totalQuantity, validateDraft } from '@/lib/order'
 import type { CreateCookieOrderInput, StorefrontData } from '@/lib/types'
 import { useOrder } from '@/app/components/OrderProvider'
 import OrderSummary from '@/app/components/OrderSummary'
@@ -97,10 +97,10 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
               <SectionHeading number="02" eyebrow="Worth the wait" id="pickup-heading">Choose your pickup.</SectionHeading>
               {!FUNDRAISER_MODE && <p className="section-help">Pickup begins two calendar days from today. Available times change with the day you choose.</p>}
               <div className="checkout-fields two-columns">
-                <Field label="Pickup date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><input className="input" id={fieldId('pickup_date')} type="date" min={CURRENT_PICKUP_DATE} max={CURRENT_PICKUP_DATE} value={draft.pickup_date} aria-invalid={Boolean(errors.pickup_date)} onChange={e => dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' })} /></div></Field>
+                <Field label="Fulfillment date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><input className="input" id={fieldId('pickup_date')} type="date" min={FULFILLMENT_DATES[0]} max={FULFILLMENT_DATES[1]} value={draft.pickup_date} aria-invalid={Boolean(errors.pickup_date)} onChange={e => dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' })} /></div></Field>
                 <Field label="Pickup time" name="pickup_time" required error={errors.pickup_time}><div className="input-with-icon"><Clock3 size={17} /><select className="input" id={fieldId('pickup_time')} value={draft.pickup_window_id && draft.pickup_time ? `${draft.pickup_window_id}|${draft.pickup_time}` : ''} aria-invalid={Boolean(errors.pickup_time)} disabled={!draft.pickup_date || !slots.length} onChange={e => { const [windowId, time] = e.target.value.split('|'); dispatch({ type: 'pickup', date: draft.pickup_date, time: time || '', windowId: windowId || '' }) }}><option value="">{!draft.pickup_date ? 'Choose a date first' : slots.length ? 'Choose a time' : 'No pickup times this day'}</option>{slots.map(slot => <option value={`${slot.window_id}|${slot.time}`} key={`${slot.window_id}-${slot.time}`}>{slot.label}</option>)}</select></div></Field>
               </div>
-              <div className="pickup-location"><MapPin size={17} /><div>{FUNDRAISER_MODE ? <><strong>We are currently only accepting orders for the 10/9 YAR fundraiser with Bengali Students Organization.</strong><span>The pickup location will be advertised on @doughnotdisturb_jz. Please check Instagram the morning of pickup. Everyone who purchases will receive the pickup location.</span></> : <><strong>{data.settings.pickup_location || 'Pickup location will be confirmed'}</strong><span>We&apos;ll use the contact details above if anything needs coordinating.</span></>}</div></div>
+              <div className="pickup-location"><MapPin size={17} /><div>{FUNDRAISER_MODE ? <><strong>Wednesday 10/21: tabling on the lawn, 12:30–3:00 PM. Friday 10/23: delivery, 3:30–7:00 PM.</strong><span>Friday delivery details will be coordinated directly. Preorders close Tuesday 10/20 at 8:00 PM.</span></> : <><strong>{data.settings.pickup_location || 'Pickup location will be confirmed'}</strong><span>We&apos;ll use the contact details above if anything needs coordinating.</span></>}</div></div>
             </section>
 
             <section className="checkout-section panel" aria-labelledby="payment-heading">
