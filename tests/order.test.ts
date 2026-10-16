@@ -11,7 +11,9 @@ const data: StorefrontData = {
   settings: { time_zone: 'America/New_York', pickup_location: null, venmo_handle: 'juzaoi', zelle_recipient: null, instagram_url: null },
   windows: [
     { id: 'oct-21-lawn-tabling', day_of_week: 3, start_time: '12:30', end_time: '15:30', slot_minutes: 30, active: true },
-    { id: 'oct-23-delivery', day_of_week: 5, start_time: '15:30', end_time: '19:30', slot_minutes: 30, active: true },
+    { id: 'oct-23-pickup', day_of_week: 5, start_time: '15:30', end_time: '19:30', slot_minutes: 30, active: true },
+    { id: 'oct-23-delivery', day_of_week: 5, start_time: '18:00', end_time: '19:30', slot_minutes: 30, active: true },
+    { id: 'oct-24-delivery', day_of_week: 6, start_time: '09:00', end_time: '14:30', slot_minutes: 30, active: true },
   ],
 }
 
@@ -49,8 +51,9 @@ describe('cookie order helpers', () => {
   })
 
   it('creates start-inclusive, end-exclusive pickup slots', () => {
-    expect(pickupSlots('2026-10-21', data.windows).map(slot => slot.time)).toEqual(['12:30', '13:00', '13:30', '14:00', '14:30', '15:00'])
-    expect(pickupSlots('2026-10-23', data.windows).map(slot => slot.time)).toEqual(['15:30', '16:00', '16:30', '17:00', '17:30', '18:00', '18:30', '19:00'])
+    expect(pickupSlots('2026-10-21', data.windows).map(slot => slot.label)).toEqual(['Lawn tabling · 12:30 PM', 'Lawn tabling · 1:00 PM', 'Lawn tabling · 1:30 PM', 'Lawn tabling · 2:00 PM', 'Lawn tabling · 2:30 PM', 'Lawn tabling · 3:00 PM'])
+    expect(pickupSlots('2026-10-23', data.windows).map(slot => slot.label)).toEqual(['Pickup · 3:30 PM', 'Pickup · 4:00 PM', 'Pickup · 4:30 PM', 'Pickup · 5:00 PM', 'Pickup · 5:30 PM', 'Pickup · 6:00 PM', 'Delivery · 6:00 PM', 'Pickup · 6:30 PM', 'Delivery · 6:30 PM', 'Pickup · 7:00 PM', 'Delivery · 7:00 PM'])
+    expect(pickupSlots('2026-10-24', data.windows).map(slot => slot.time)).toEqual(['09:00', '09:30', '10:00', '10:30', '11:00', '11:30', '12:00', '12:30', '13:00', '13:30', '14:00'])
     expect(pickupSlots('2026-10-22', data.windows)).toEqual([])
   })
 

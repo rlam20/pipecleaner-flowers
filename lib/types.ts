@@ -68,6 +68,7 @@ export type OrderReceipt = {
   pickup_date: string
   pickup_time: string
   pickup_location: string | null
+  fulfillment_method: 'pickup' | 'delivery'
   time_zone: string
   payment_method: PaymentMethod
   payment_recipient: string

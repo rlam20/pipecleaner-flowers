@@ -4,16 +4,17 @@ test('renders the complete storefront without horizontal overflow', async ({ pag
   await page.goto('/')
   await expect(page).toHaveTitle(/DoughNotDisturb/)
   await expect(page.getByRole('heading', { name: /A little pause/i })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Matcha Neapolitan' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Biscoff Chai' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Mango Lassi' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Spindle and Spice' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Dracula’s Kiss' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Coraline Cheesecake' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Mummy’s Favorite' })).toBeVisible()
   await expect(page.locator('body')).toContainText('The cookie counter is getting ready')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
 
 test('restores private checkout details from this tab without putting them in the URL', async ({ page }) => {
   await page.addInitScript(() => {
-    sessionStorage.setItem('dough-not-disturb.order.v1', JSON.stringify({
+    sessionStorage.setItem('dough-not-disturb.order.v3', JSON.stringify({
       version: 3,
       receipt: null,
       draft: {
@@ -29,7 +30,7 @@ test('restores private checkout details from this tab without putting them in th
   await expect(page.getByRole('heading', { name: /cookie break official/i })).toBeVisible()
   await expect(page.getByLabel('First name')).toHaveValue('Test')
   await expect(page.getByLabel('Phone')).toHaveValue('(555) 123-4567')
-  await expect(page.getByText('Matcha Neapolitan × 2')).toBeVisible()
+  await expect(page.getByText(/Spindle and Spice.*2/)).toBeVisible()
   expect(page.url()).toBe('http://127.0.0.1:3000/checkout')
 })
 

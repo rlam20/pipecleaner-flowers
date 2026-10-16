@@ -27,7 +27,7 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
   const lines = receipt.items.map((item) =>
     `${item.quantity} × ${item.name} — ${currency(item.unit_price_cents)} each — ${currency(item.line_total_cents)}`
   )
-  const pickup = `${receipt.pickup_date} at ${receipt.pickup_time} (${receipt.time_zone})`
+  const pickup = `${receipt.fulfillment_method === 'delivery' ? 'Delivery' : 'Pickup'}: ${receipt.pickup_date} at ${receipt.pickup_time} (${receipt.time_zone})`
   const location = receipt.pickup_location || 'Pickup location will be confirmed directly.'
   const payment = `${receipt.payment_method === 'venmo' ? 'Venmo' : 'Zelle'}: ${receipt.payment_recipient}`
   const text = [

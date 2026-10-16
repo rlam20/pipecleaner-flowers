@@ -50,7 +50,7 @@ beforeEach(async () => {
     update public.cookie_products set active = true, unit_price_cents = 300;
     update public.cookie_store_settings set time_zone = 'America/New_York', pickup_location = null,
       venmo_handle = 'juzaoi', zelle_recipient = null;
-    update public.cookie_pickup_windows set active = (id in ('oct-21-lawn-tabling', 'oct-23-delivery'));
+    update public.cookie_pickup_windows set active = (id in ('oct-21-lawn-tabling', 'oct-23-pickup', 'oct-23-delivery', 'oct-24-delivery'));
   `)
   pickupDate = '2026-10-21'
 })
@@ -200,10 +200,26 @@ describe('cookie order database contract', () => {
   it('accepts the Friday delivery window', async () => {
     const payload = input()
     payload.pickup_date = '2026-10-23'
-    payload.pickup_time = '15:30'
+    payload.pickup_time = '18:00'
     payload.pickup_window_id = 'oct-23-delivery'
-    payload.expected_pickup = { ...payload.expected_pickup, start_time: '15:30', end_time: '19:30' }
-    expect(await submit(payload)).toMatchObject({ success: true, receipt: { pickup_date: '2026-10-23', pickup_time: '15:30' } })
+    payload.expected_pickup = { ...payload.expected_pickup, start_time: '18:00', end_time: '19:30' }
+    expect(await submit(payload)).toMatchObject({ success: true, receipt: { pickup_date: '2026-10-23', pickup_time: '18:00', fulfillment_method: 'delivery' } })
+  })
+
+  it('accepts the Friday pickup and Saturday delivery windows', async () => {
+    const friday = input()
+    friday.pickup_date = '2026-10-23'
+    friday.pickup_time = '15:30'
+    friday.pickup_window_id = 'oct-23-pickup'
+    friday.expected_pickup = { ...friday.expected_pickup, start_time: '15:30', end_time: '19:30' }
+    expect(await submit(friday)).toMatchObject({ success: true, receipt: { fulfillment_method: 'pickup' } })
+
+    const saturday = input()
+    saturday.pickup_date = '2026-10-24'
+    saturday.pickup_time = '09:00'
+    saturday.pickup_window_id = 'oct-24-delivery'
+    saturday.expected_pickup = { ...saturday.expected_pickup, start_time: '09:00', end_time: '14:30' }
+    expect(await submit(saturday)).toMatchObject({ success: true, receipt: { pickup_date: '2026-10-24', fulfillment_method: 'delivery' } })
   })
 
   it.each(['12:15', '15:30', '25:00', '12:30:30'])('rejects unavailable or invalid pickup time %s', async (pickup_time) => {

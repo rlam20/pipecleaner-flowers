@@ -1,6 +1,6 @@
 import type { CookieProduct, OrderDraft, OrderItemInput, OrderLine, PickupSlot, PickupWindow, StorefrontData } from './types'
 
-export const FULFILLMENT_DATES = ['2026-10-21', '2026-10-23'] as const
+export const FULFILLMENT_DATES = ['2026-10-21', '2026-10-23', '2026-10-24'] as const
 export const CURRENT_PICKUP_DATE = FULFILLMENT_DATES[0]
 export const ORDER_CUTOFF = new Date('2026-10-21T00:00:00Z')
 export const FUNDRAISER_MODE = true
@@ -62,7 +62,8 @@ export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[]
     if (!Number.isInteger(window.slot_minutes) || window.slot_minutes <= 0) return slots
     for (let current = minutes(window.start_time); current + window.slot_minutes <= minutes(window.end_time); current += window.slot_minutes) {
       const time = `${String(Math.floor(current / 60)).padStart(2, '0')}:${String(current % 60).padStart(2, '0')}`
-      slots.push({ window_id: window.id, time, label: formatTime(time) })
+      const method = window.id.includes('delivery') ? 'Delivery' : window.id.includes('lawn-tabling') ? 'Lawn tabling' : 'Pickup'
+      slots.push({ window_id: window.id, time, label: `${method} · ${formatTime(time)}` })
     }
     return slots
   }).sort((a, b) => a.time.localeCompare(b.time))

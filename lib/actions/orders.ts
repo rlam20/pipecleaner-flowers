@@ -33,6 +33,7 @@ function validReceipt(value: unknown): value is OrderReceipt {
     && (value.order_type === 'snack' || value.order_type === 'party')
     && (value.packaging === 'standard' || value.packaging === 'card')
     && (value.payment_method === 'venmo' || value.payment_method === 'zelle')
+    && (value.fulfillment_method === 'pickup' || value.fulfillment_method === 'delivery')
     && (value.pickup_location === null || typeof value.pickup_location === 'string')
     && value.status === 'awaiting_payment'
     && Number.isSafeInteger(value.total_cents)

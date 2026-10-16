@@ -81,7 +81,7 @@ em { font-weight: inherit; }
 .hero-visual { position: relative; min-width: 0; }
 .hero-photo { position: relative; aspect-ratio: 1.06; overflow: hidden; border-radius: 46% 46% 3px 3px; background: var(--beige-light); }
 .hero-photo img { object-fit: cover; }
-.hero-photo.hero-menu { background: #315853; border-radius: 3px; }
+.hero-photo.hero-menu { aspect-ratio: 500 / 646; background: #315853; border-radius: 3px; }
 .hero-photo.hero-menu img { object-fit: contain; }
 .hero-seal { position: absolute; bottom: 52px; left: -39px; width: 112px; height: 112px; border: 1px solid var(--green-olive); border-radius: 50%; outline: 7px solid var(--cream); background: var(--cream); color: var(--green-muted); display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-11deg); }
 .hero-seal > span { font-family: var(--font-heading); font-size: 19px; line-height: 1.23; text-align: center; margin: 4px 0; }
