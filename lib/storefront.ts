@@ -17,7 +17,7 @@ const fallbackProducts: CookieProduct[] = [
   },
   {
     id: 'coraline-cheesecake', name: 'Coraline Cheesecake',
-    description: 'A dark chocolate cookie with a creamy cheesecake center, purple drizzle, and golden stars.',
+    description: 'A dark chocolate cookie with a creamy cheesecake center, ube purple drizzle, and golden stars.',
     image_url: '/cookies/coraline-cheesecake.png', unit_price_cents: 300, sort_order: 3, active: true,
   },
   {
