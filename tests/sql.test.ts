@@ -8,6 +8,7 @@ const leadTimeMigration = readFileSync(new URL('../supabase/migrations/202610040
 const specialPickupMigration = readFileSync(new URL('../supabase/migrations/202610040002_oct_9_pickup_only.sql', import.meta.url), 'utf8')
 const octoberMenuMigration = readFileSync(new URL('../supabase/migrations/202610150001_october_menu.sql', import.meta.url), 'utf8')
 const fulfillmentMigration = readFileSync(new URL('../supabase/migrations/202610150002_next_week_fulfillment.sql', import.meta.url), 'utf8')
+const fridayDeliveryMigration = readFileSync(new URL('../supabase/migrations/202610150005_friday_delivery_only.sql', import.meta.url), 'utf8')
 const seed = readFileSync(new URL('../supabase/seed.sql', import.meta.url), 'utf8')
 type RpcResult = { success: boolean; code?: string; error?: string; created?: boolean; receipt?: OrderReceipt }
 let db: PGlite
@@ -41,6 +42,7 @@ beforeAll(async () => {
   await db.exec(specialPickupMigration)
   await db.exec(octoberMenuMigration)
   await db.exec(fulfillmentMigration)
+  await db.exec(fridayDeliveryMigration)
 }, 60_000)
 
 beforeEach(async () => {
@@ -50,7 +52,7 @@ beforeEach(async () => {
     update public.cookie_products set active = true, unit_price_cents = 300;
     update public.cookie_store_settings set time_zone = 'America/New_York', pickup_location = null,
       venmo_handle = 'juzaoi', zelle_recipient = null;
-    update public.cookie_pickup_windows set active = (id in ('oct-21-lawn-tabling', 'oct-23-pickup', 'oct-23-delivery', 'oct-24-delivery'));
+    update public.cookie_pickup_windows set active = (id in ('oct-21-lawn-tabling', 'oct-23-delivery', 'oct-24-delivery'));
   `)
   pickupDate = '2026-10-21'
 })
@@ -200,20 +202,13 @@ describe('cookie order database contract', () => {
   it('accepts the Friday delivery window', async () => {
     const payload = input()
     payload.pickup_date = '2026-10-23'
-    payload.pickup_time = '18:00'
+    payload.pickup_time = '15:30'
     payload.pickup_window_id = 'oct-23-delivery'
-    payload.expected_pickup = { ...payload.expected_pickup, start_time: '18:00', end_time: '19:30' }
-    expect(await submit(payload)).toMatchObject({ success: true, receipt: { pickup_date: '2026-10-23', pickup_time: '18:00', fulfillment_method: 'delivery' } })
+    payload.expected_pickup = { ...payload.expected_pickup, start_time: '15:30', end_time: '18:30' }
+    expect(await submit(payload)).toMatchObject({ success: true, receipt: { pickup_date: '2026-10-23', pickup_time: '15:30', fulfillment_method: 'delivery' } })
   })
 
-  it('accepts the Friday pickup and Saturday delivery windows', async () => {
-    const friday = input()
-    friday.pickup_date = '2026-10-23'
-    friday.pickup_time = '15:30'
-    friday.pickup_window_id = 'oct-23-pickup'
-    friday.expected_pickup = { ...friday.expected_pickup, start_time: '15:30', end_time: '19:30' }
-    expect(await submit(friday)).toMatchObject({ success: true, receipt: { fulfillment_method: 'pickup' } })
-
+  it('accepts the Saturday delivery window', async () => {
     const saturday = input()
     saturday.pickup_date = '2026-10-24'
     saturday.pickup_time = '09:00'
