@@ -80,8 +80,6 @@ export default function Storefront({ data }: { data: StorefrontData }) {
               <div className="quantity-explainer">
                 <p>A little treat or a reason to gather?</p>
                 <ul>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>1–6 cookies: Snack Pick Up.</strong></li>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>7 or more: Party Pack.</strong></li>
                   <li><Sparkle size={14} aria-hidden="true" /><strong>Every 3 cookies: $1 off.</strong></li>
                   <li><Sparkle size={14} aria-hidden="true" /><strong>Every 5 cookies: $2 off.</strong></li>
                   <li><Sparkle size={14} aria-hidden="true" /><strong>10-cookie order maximum.</strong></li>

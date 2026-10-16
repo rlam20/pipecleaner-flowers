@@ -24,7 +24,6 @@ export default function OrderSummary({ products, compact = false, children }: { 
         </div>
       ) : (
         <>
-          <p className="order-category">{count <= 6 ? 'Snack Pick Up' : 'Party Pack'} <span>· {count} {count === 1 ? 'cookie' : 'cookies'}</span></p>
           <ul className="summary-lines">
             {lines.map(line => (
               <li key={line.product_id}>
