@@ -7,7 +7,7 @@ import type { CookieProduct, PickupWindow, StorefrontData, StoreSettings } from 
 const fallbackProducts: CookieProduct[] = [
   {
     id: 'spindle-and-spice', name: 'Spindle and Spice',
-    description: 'A soft cinnamon-butter cookie swirled with gooey cinnamon filling, topped with vanilla glaze and a spooky marshmallow spiderweb.',
+    description: 'A soft cinnamon-butter cookie swirled with gooey cinnamon filling, topped with vanilla glaze and a spooky vegan marshmallow spiderweb.',
     image_url: '/cookies/spindle-and-spice.png', unit_price_cents: 300, sort_order: 1, active: true,
   },
   {

@@ -2,7 +2,8 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight, ArrowUpRight, Check, Gift, Minus, Plus, Sparkle } from 'lucide-react'
+import { useState } from 'react'
+import { ArrowRight, ArrowUpRight, Check, Gift, Minus, Plus, Sparkle, X } from 'lucide-react'
 import type { CookieProduct, StorefrontData } from '@/lib/types'
 import { MAX_FLAVOR_QUANTITY, MAX_ORDER_QUANTITY, isOrderingOpen, money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
 import { useOrder } from './OrderProvider'
@@ -39,11 +40,13 @@ function CookieCard({ product, index, available }: { product: CookieProduct; ind
 export default function Storefront({ data }: { data: StorefrontData }) {
   const { draft, dispatch, hydrated } = useOrder()
   const count = totalQuantity(draft.items)
+  const [dismissedDealCount, setDismissedDealCount] = useState<number | null>(null)
   const orderingOpen = isOrderingOpen()
   const lines = orderLines(draft.items, data.products)
   const total = orderTotal(lines)
   const needsNote = draft.packaging === 'card' && !draft.card_message.trim()
   const canCheckout = hydrated && data.available && orderingOpen && count > 0 && !needsNote
+  const showDealNotice = count > 0 && count < MAX_ORDER_QUANTITY && count % 2 === 0 && dismissedDealCount !== count
 
   return (
     <div className="storefront">
@@ -116,6 +119,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
         </section>
       </main>
       <SiteFooter instagramUrl={data.settings.instagram_url} />
+      {showDealNotice && <div className="deal-popup" role="status"><Sparkle size={18} aria-hidden="true" /><span>Add one more and save a dollar!</span><button type="button" onClick={() => setDismissedDealCount(count)} aria-label="Dismiss cookie deal notice"><X size={16} aria-hidden="true" /></button></div>}
       {hydrated && count > 0 && <div className="mobile-checkout"><div><span>{count} {count === 1 ? 'cookie' : 'cookies'} in your bag</span><strong>{money(total)}</strong></div>{canCheckout ? <Link href="/checkout" className="button">Checkout <ArrowRight size={16} aria-hidden="true" /></Link> : <button type="button" className="button" disabled>{needsNote ? 'Add your note' : 'Unavailable'}</button>}</div>}
     </div>
   )
