@@ -61,7 +61,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
             <div className="hero-small-note"><span className="tiny-star">✳</span> A little something worth slowing down for.</div>
           </div>
           <div className="hero-visual">
-            <div className="hero-photo hero-menu"><Image src="/cookies/october-menu-v2.png" alt="DoughNotDisturb October cookie menu" fill priority sizes="(max-width: 759px) 92vw, 49vw" /></div>
+            <div className="hero-photo hero-menu"><Image src="/cookies/october-menu-v3.png" alt="DoughNotDisturb October cookie menu" fill priority sizes="(max-width: 759px) 92vw, 49vw" /></div>
             <div className="hero-seal" aria-hidden="true"><Sparkle size={16} strokeWidth={1.1} /><span>do not<br /><em>disturb.</em></span><small>COOKIE BREAK</small></div>
             <p className="photo-caption"><span>Made for your little moments.</span><span>Enjoy every crumb.</span></p>
           </div>
