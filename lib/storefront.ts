@@ -60,7 +60,7 @@ export async function getStorefront(): Promise<StorefrontData> {
         .eq('id', true).maybeSingle(),
       supabase.from('cookie_pickup_windows')
         .select('id,day_of_week,start_time,end_time,slot_minutes,active')
-        .eq('active', true).order('day_of_week').order('start_time'),
+        .eq('active', true).not('id', 'ilike', '%tabling%').order('day_of_week').order('start_time'),
     ])
 
     if (productResult.error || settingsResult.error || windowResult.error) return fallback
