@@ -55,16 +55,10 @@ export function formatTime(value: string): string {
 export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[] {
   if (!validDate(date) || !FULFILLMENT_DATES.includes(date as typeof FULFILLMENT_DATES[number])) return []
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
-  const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
-  return windows.filter(window => window.active && window.day_of_week === weekday && window.fulfillment_date === date).flatMap(window => {
-    const slots: PickupSlot[] = []
-    if (!Number.isInteger(window.slot_minutes) || window.slot_minutes <= 0) return slots
-    for (let current = minutes(window.start_time); current + window.slot_minutes <= minutes(window.end_time); current += window.slot_minutes) {
-      const time = `${String(Math.floor(current / 60)).padStart(2, '0')}:${String(current % 60).padStart(2, '0')}`
-      const method = window.fulfillment_method === 'delivery' ? 'Delivery (+$1)' : 'Pickup'
-      slots.push({ window_id: window.id, time, label: `${method} · ${formatTime(time)}` })
-    }
-    return slots
+  return windows.filter(window => window.active && window.day_of_week === weekday && window.fulfillment_date === date && window.start_time < window.end_time).map(window => {
+    const time = window.start_time.slice(0, 5)
+    const method = window.fulfillment_method === 'delivery' ? 'Delivery (+$1)' : 'Pickup'
+    return { window_id: window.id, time, label: `${method} · ${formatTime(time)}–${formatTime(window.end_time)}` }
   }).sort((a, b) => a.time.localeCompare(b.time))
 }
 
