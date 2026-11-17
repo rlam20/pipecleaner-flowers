@@ -43,8 +43,13 @@ export async function getStorefront(): Promise<StorefrontData> {
         .select('time_zone,pickup_location,venmo_handle,zelle_recipient,instagram_url')
         .eq('id', true).maybeSingle(),
       supabase.from('cookie_pickup_windows')
+<<<<<<< HEAD
         .select('id,day_of_week,start_time,end_time,slot_minutes,active,fulfillment_date,fulfillment_method')
         .eq('active', true).order('day_of_week').order('start_time'),
+=======
+        .select('id,day_of_week,start_time,end_time,slot_minutes,active')
+        .eq('active', true).not('id', 'ilike', '%tabling%').order('day_of_week').order('start_time'),
+>>>>>>> abb2102ae8345f7293689b255707b009f89d8cd0
     ])
 
     if (productResult.error || settingsResult.error || windowResult.error) return fallback
