@@ -4,7 +4,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowRight, ArrowUpRight, Check, Gift, Minus, Plus, Sparkle, X } from 'lucide-react'
+import { ArrowRight, ArrowUpRight, Check, Minus, Plus, Sparkle, X } from 'lucide-react'
 import type { CookieProduct, StorefrontData } from '@/lib/types'
 import { MAX_ORDER_QUANTITY, isOrderingOpen, money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
 import { useOrder } from './OrderProvider'
@@ -54,8 +54,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
   const orderingOpen = isOrderingOpen()
   const lines = orderLines(draft.items, data.products)
   const total = orderTotal(lines, draft.pickup_window_id.includes('delivery'))
-  const needsNote = draft.packaging === 'card' && !draft.card_message.trim()
-  const canCheckout = hydrated && data.available && orderingOpen && count > 0 && !needsNote
+  const canCheckout = hydrated && data.available && orderingOpen && count > 0
   const showDealNotice = count > 0 && count < MAX_ORDER_QUANTITY && count % 3 !== 0 && dismissedDealCount !== count
 
   return (
@@ -99,26 +98,11 @@ export default function Storefront({ data }: { data: StorefrontData }) {
                   <li><Sparkle size={14} aria-hidden="true" /><strong>Available while stocks last.</strong></li>
                 </ul>
               </div>
-              <fieldset className="packaging-section" disabled={!data.available}>
-                <legend><span className="eyebrow">02 / The finishing touch</span><span className="packaging-title">A little extra thought.</span></legend>
-                <p>For yourself or someone on your mind. Your choice, always included.</p>
-                <div className="packaging-options">
-                  <label className={`packaging-option${draft.packaging === 'standard' ? ' is-selected' : ''}`}>
-                    <input type="radio" name="packaging" value="standard" checked={draft.packaging === 'standard'} onChange={() => dispatch({ type: 'packaging', packaging: 'standard' })} />
-                    <span><strong>Just the cookies</strong><small>Our standard packaging</small></span><span className="option-price">Included</span>
-                  </label>
-                  <label className={`packaging-option${draft.packaging === 'card' ? ' is-selected' : ''}`}>
-                    <input type="radio" name="packaging" value="card" checked={draft.packaging === 'card'} onChange={() => dispatch({ type: 'packaging', packaging: 'card' })} />
-                    <span><strong>Card with Note <Gift size={15} aria-hidden="true" /></strong><small>Say it with something sweet</small></span><span className="option-price">Free</span>
-                  </label>
-                </div>
-                {draft.packaging === 'card' && <div className="field gift-message-field"><label className="field-label" htmlFor="card-message">Your message <span>(required)</span></label><textarea id="card-message" className="input" rows={3} placeholder="A little note to make their day…" value={draft.card_message} onChange={event => dispatch({ type: 'message', message: event.target.value })} required aria-describedby="card-message-help" /><p id="card-message-help" className="field-hint">We’ll include this message with your cookies.</p></div>}
-              </fieldset>
+
             </div>
             <aside className="summary-sidebar">
               <OrderSummary products={data.products}>
                 {canCheckout ? <Link href="/checkout" className="button checkout-button">Continue to Checkout <ArrowRight size={17} aria-hidden="true" /></Link> : <button type="button" className="button checkout-button" disabled>Continue to Checkout <ArrowRight size={17} aria-hidden="true" /></button>}
-                {needsNote && <p className="field-hint checkout-hint">Add your card message to continue.</p>}
               </OrderSummary>
             </aside>
           </div>
@@ -130,7 +114,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
       </main>
       <SiteFooter instagramUrl={data.settings.instagram_url} />
       {showDealNotice && <div className="deal-popup" role="status"><Sparkle size={18} aria-hidden="true" /><span>Add one more and save a dollar!</span><button type="button" onClick={() => setDismissedDealCount(count)} aria-label="Dismiss cookie deal notice"><X size={16} aria-hidden="true" /></button></div>}
-      {hydrated && count > 0 && <div className="mobile-checkout"><div><span>{count} {count === 1 ? 'cookie' : 'cookies'} in your bag</span><strong>{money(total)}</strong></div>{canCheckout ? <Link href="/checkout" className="button">Checkout <ArrowRight size={16} aria-hidden="true" /></Link> : <button type="button" className="button" disabled>{needsNote ? 'Add your note' : 'Unavailable'}</button>}</div>}
+      {hydrated && count > 0 && <div className="mobile-checkout"><div><span>{count} {count === 1 ? 'cookie' : 'cookies'} in your bag</span><strong>{money(total)}</strong></div>{canCheckout ? <Link href="/checkout" className="button">Checkout <ArrowRight size={16} aria-hidden="true" /></Link> : <button type="button" className="button" disabled>Unavailable</button>}</div>}
     </div>
   )
 }
