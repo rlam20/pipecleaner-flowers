@@ -5,7 +5,7 @@ import type { CookieProduct, PickupWindow, StorefrontData, StoreSettings } from 
 
 // Presentation fallback only. Orders require a successfully loaded Supabase catalog.
 const fallbackProducts: CookieProduct[] = [
-  { id: 'far-from-the-tree', name: 'Far From the Tree', description: 'Red apple cider cookie studded with buttery stroopwafel pieces and topped with a caramel-filled stroopwafel heart.', image_url: '/cookies/far%20from%20the%20tree.png', unit_price_cents: 400, sort_order: 1, active: true, stock_quantity: 0 },
+  { id: 'far-from-the-tree', name: 'Far From the Tree', description: 'Red apple cider cookie studded with buttery stroopwafel pieces and topped with a caramel-filled stroopwafel heart.', image_url: '/cookies/A18B6880-0509-42D8-8308-1D10691133F0.png', unit_price_cents: 400, sort_order: 1, active: true, stock_quantity: 0 },
   { id: 'dirty-little-secret', name: 'Dirty Little Secret', description: 'Warmly spiced chai cookie infused with espresso, packed with white and milk chocolate chips, buttery toffee chunks, and finished with flaky sea salt.', image_url: '/cookies/Dirty%20little%20secret.png', unit_price_cents: 400, sort_order: 2, active: true, stock_quantity: 0 },
   { id: 'miso-happy', name: 'Miso Happy', description: 'Rich brown butter chocolate chip cookie with savory miso for the perfect balance of sweet, salty, and nutty flavors.', image_url: '/cookies/miso%20butter.png', unit_price_cents: 300, sort_order: 3, active: true, stock_quantity: 0 },
   { id: 'bueno-than-ever', name: 'Bueno Than Ever', description: 'A decadent cookie cake with fluffy whipped cream, rich Nutella, sweet jam, and cookie dough, topped with a Kinder Bueno and a fresh strawberry.', image_url: '/cookies/bueno_than_ever.png', unit_price_cents: 400, sort_order: 4, active: true, stock_quantity: 0 }
@@ -54,7 +54,7 @@ export async function getStorefront(): Promise<StorefrontData> {
     ).map((product) => ({
       ...product,
       description: nullableText(product.description) ?? fallbackProducts.find(fallback => fallback.id === product.id)?.description ?? '',
-      image_url: nullableText(product.image_url) ?? fallbackProducts.find(fallback => fallback.id === product.id)?.image_url ?? '',
+      image_url: product.id === 'far-from-the-tree' ? '/cookies/A18B6880-0509-42D8-8308-1D10691133F0.png' : (nullableText(product.image_url) ?? fallbackProducts.find(fallback => fallback.id === product.id)?.image_url ?? ''),
     }))
 
     const row = settingsResult.data
