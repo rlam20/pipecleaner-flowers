@@ -98,23 +98,14 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
             </section>
 
             <section className="checkout-section panel" aria-labelledby="pickup-heading">
-<<<<<<< HEAD
               <SectionHeading number="02" eyebrow="Worth the wait" id="pickup-heading">Choose pickup or delivery.</SectionHeading>
               <p className="section-help">Order by the previous calendar day, Eastern time. Choose a 30-minute slot; we will coordinate the exact handoff with you.</p><Field label="Method" name="method" required><select className="input" id={fieldId('method')} value={method} onChange={e => { setMethod(e.target.value as 'pickup' | 'delivery'); dispatch({ type: 'pickup', date: '', time: '', windowId: '' }) }}><option value="pickup">Pickup — free</option><option value="delivery">Delivery — +$1 per order</option></select></Field>
-=======
-              <SectionHeading number="02" eyebrow="Worth the wait" id="pickup-heading">Choose your preorder fulfillment.</SectionHeading>
-              {!FUNDRAISER_MODE && <p className="section-help">Pickup begins two calendar days from today. Available times change with the day you choose.</p>}
->>>>>>> abb2102ae8345f7293689b255707b009f89d8cd0
               <div className="checkout-fields two-columns">
                 <Field label="Fulfillment date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><select className="input" id={fieldId('pickup_date')} value={availableDates.includes(draft.pickup_date as typeof FULFILLMENT_DATES[number]) ? draft.pickup_date : ''} aria-invalid={Boolean(errors.pickup_date)} onChange={e => { setMethod(method); dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' }) }}><option value="">Choose a date</option>{availableDates.map(date => <option key={date} value={date}>{formatDate(date)}</option>)}</select></div></Field>
                 <Field label="Time and method" name="pickup_time" required error={errors.pickup_time}><div className="input-with-icon"><Clock3 size={17} /><select className="input" id={fieldId('pickup_time')} value={draft.pickup_window_id && draft.pickup_time ? `${draft.pickup_window_id}|${draft.pickup_time}` : ''} aria-invalid={Boolean(errors.pickup_time)} disabled={!draft.pickup_date || !slots.length} onChange={e => { const [windowId, time] = e.target.value.split('|'); dispatch({ type: 'pickup', date: draft.pickup_date, time: time || '', windowId: windowId || '' }) }}><option value="">{!draft.pickup_date ? 'Choose a date first' : slots.length ? 'Choose a time and method' : 'No fulfillment times this day'}</option>{slots.map(slot => <option value={`${slot.window_id}|${slot.time}`} key={`${slot.window_id}-${slot.time}`}>{slot.label}</option>)}</select></div></Field>
               </div>
-<<<<<<< HEAD
               {method === 'delivery' && <Field label="Delivery location and details" name="delivery_details" required error={errors.delivery_details}><textarea className="input" id={fieldId('delivery_details')} maxLength={1000} value={draft.delivery_details} onChange={e => dispatch({ type: 'deliveryDetails', details: e.target.value })} aria-invalid={Boolean(errors.delivery_details)} placeholder="Address, building, room, and handoff instructions" /></Field>}
               <div className="pickup-location"><MapPin size={17} /><div><strong>{data.settings.pickup_location || 'Pickup location will be confirmed directly'}</strong><ul className="fulfillment-schedule"><li>Tuesday 11/17: pickup 12:30–2:30 PM and 5:30–7:30 PM</li><li>Wednesday 11/18 and Friday 11/20: pickup and delivery 5–8:30 PM</li><li>Saturday 11/21: delivery 9 AM–noon; pickup 5–8:30 PM</li></ul><span>All times Eastern. We will contact you to coordinate your selected slot.</span></div></div>
-=======
-              <div className="pickup-location"><MapPin size={17} /><div>{FUNDRAISER_MODE ? <><ul className="fulfillment-schedule"><li><strong>Friday 10/23:</strong> Delivery only, 3:30–6:00 PM</li><li><strong>Sunday 10/25:</strong> Delivery, 9:00 AM–2:00 PM; pickup, 2:00–7:00 PM</li></ul><span>Delivery details will be coordinated directly. Preorders close Tuesday 10/20 at 8:00 PM.</span></> : <><strong>{data.settings.pickup_location || 'Pickup location will be confirmed'}</strong><span>We&apos;ll use the contact details above if anything needs coordinating.</span></>}</div></div>
->>>>>>> abb2102ae8345f7293689b255707b009f89d8cd0
             </section>
 
             <section className="checkout-section panel" aria-labelledby="payment-heading">

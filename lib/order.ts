@@ -1,10 +1,6 @@
 import type { CookieProduct, OrderDraft, OrderItemInput, OrderLine, PickupSlot, PickupWindow, StorefrontData } from './types'
 
-<<<<<<< HEAD
 export const FULFILLMENT_DATES = ['2026-11-17', '2026-11-18', '2026-11-20', '2026-11-21'] as const
-=======
-export const FULFILLMENT_DATES = ['2026-10-23', '2026-10-25'] as const
->>>>>>> abb2102ae8345f7293689b255707b009f89d8cd0
 export const CURRENT_PICKUP_DATE = FULFILLMENT_DATES[0]
 export const ORDER_CUTOFF = new Date('2026-11-21T05:00:00Z')
 export const MAX_ORDER_QUANTITY = 2147483647
@@ -60,20 +56,12 @@ export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[]
   if (!validDate(date) || !FULFILLMENT_DATES.includes(date as typeof FULFILLMENT_DATES[number])) return []
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
   const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
-<<<<<<< HEAD
   return windows.filter(window => window.active && window.day_of_week === weekday && window.fulfillment_date === date).flatMap(window => {
-=======
-  return windows.filter(window => window.active && !window.id.includes('tabling') && window.day_of_week === weekday).flatMap(window => {
->>>>>>> abb2102ae8345f7293689b255707b009f89d8cd0
     const slots: PickupSlot[] = []
     if (!Number.isInteger(window.slot_minutes) || window.slot_minutes <= 0) return slots
     for (let current = minutes(window.start_time); current + window.slot_minutes <= minutes(window.end_time); current += window.slot_minutes) {
       const time = `${String(Math.floor(current / 60)).padStart(2, '0')}:${String(current % 60).padStart(2, '0')}`
-<<<<<<< HEAD
       const method = window.fulfillment_method === 'delivery' ? 'Delivery (+$1)' : 'Pickup'
-=======
-      const method = window.id.includes('delivery') ? 'Delivery' : 'Pickup'
->>>>>>> abb2102ae8345f7293689b255707b009f89d8cd0
       slots.push({ window_id: window.id, time, label: `${method} · ${formatTime(time)}` })
     }
     return slots
