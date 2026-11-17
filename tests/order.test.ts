@@ -5,23 +5,21 @@ import type { OrderDraft, StorefrontData } from '../lib/types'
 const data: StorefrontData = {
   available: true,
   products: [
-    { id: 'matcha', name: 'Matcha', description: '', image_url: '', unit_price_cents: 400, sort_order: 1, active: true },
-    { id: 'mango', name: 'Mango', description: '', image_url: '', unit_price_cents: 500, sort_order: 2, active: true },
+    { id: 'matcha', name: 'Matcha', description: '', image_url: '', unit_price_cents: 400, sort_order: 1, active: true, stock_quantity: 31 },
+    { id: 'mango', name: 'Mango', description: '', image_url: '', unit_price_cents: 500, sort_order: 2, active: true, stock_quantity: 31 },
   ],
   settings: { time_zone: 'America/New_York', pickup_location: null, venmo_handle: 'juzaoi', zelle_recipient: null, instagram_url: null },
   windows: [
-    { id: 'oct-21-lawn-tabling', day_of_week: 3, start_time: '12:30', end_time: '15:30', slot_minutes: 30, active: true },
-    { id: 'oct-23-delivery', day_of_week: 5, start_time: '15:30', end_time: '18:30', slot_minutes: 30, active: true },
-    { id: 'oct-25-delivery', day_of_week: 0, start_time: '09:00', end_time: '14:30', slot_minutes: 30, active: true },
-    { id: 'oct-25-pickup', day_of_week: 0, start_time: '14:00', end_time: '19:30', slot_minutes: 30, active: true },
+    { id: 'nov-17-pickup', fulfillment_date: '2026-11-17', fulfillment_method: 'pickup', day_of_week: 2, start_time: '12:30', end_time: '14:30', slot_minutes: 30, active: true },
+    { id: 'nov-21-delivery', fulfillment_date: '2026-11-21', fulfillment_method: 'delivery', day_of_week: 6, start_time: '09:00', end_time: '12:00', slot_minutes: 30, active: true },
   ],
 }
 
 function draft(overrides: Partial<OrderDraft> = {}): OrderDraft {
   return {
-    items: [{ product_id: 'matcha', quantity: 1 }], packaging: 'standard', card_message: '', order_notes: '',
+    items: [{ product_id: 'matcha', quantity: 1 }], packaging: 'standard', card_message: '', order_notes: '', delivery_details: '',
     customer: { first_name: 'Ray', last_name: 'Customer', phone: '(555) 123-4567', email: '', social_handle: '' },
-    pickup_date: '2026-10-21', pickup_time: '12:30', pickup_window_id: 'oct-21-lawn-tabling', payment_method: 'venmo', request_id: crypto.randomUUID(),
+    pickup_date: '2026-11-17', pickup_time: '12:30', pickup_window_id: 'nov-17-pickup', payment_method: 'venmo', request_id: crypto.randomUUID(),
     ...overrides,
   }
 }
@@ -41,25 +39,24 @@ describe('cookie order helpers', () => {
 
   it('applies five-cookie groups first, then three-cookie groups', () => {
     const priced = (quantity: number) => orderTotal(orderLines([{ product_id: 'matcha', quantity }], data.products))
-    expect(priced(2)).toBe(800)
-    expect(priced(3)).toBe(1100)
-    expect(priced(4)).toBe(1500)
-    expect(priced(5)).toBe(1800)
-    expect(priced(6)).toBe(2200)
-    expect(priced(8)).toBe(2900)
-    expect(priced(10)).toBe(3600)
+    expect(priced(2)).toBe(700)
+    expect(priced(3)).toBe(1000)
+    expect(priced(4)).toBe(1400)
+    expect(priced(5)).toBe(1700)
+    expect(priced(6)).toBe(2000)
+    expect(priced(8)).toBe(2700)
+    expect(priced(10)).toBe(3400)
   })
 
-  it('creates start-inclusive, end-exclusive pickup slots', () => {
-    expect(pickupSlots('2026-10-21', data.windows).map(slot => slot.label)).toEqual(['Lawn tabling · 12:30 PM', 'Lawn tabling · 1:00 PM', 'Lawn tabling · 1:30 PM', 'Lawn tabling · 2:00 PM', 'Lawn tabling · 2:30 PM', 'Lawn tabling · 3:00 PM'])
-    expect(pickupSlots('2026-10-23', data.windows).map(slot => slot.label)).toEqual(['Delivery · 3:30 PM', 'Delivery · 4:00 PM', 'Delivery · 4:30 PM', 'Delivery · 5:00 PM', 'Delivery · 5:30 PM', 'Delivery · 6:00 PM'])
-    expect(pickupSlots('2026-10-25', data.windows).map(slot => slot.label)).toEqual(['Delivery · 9:00 AM', 'Delivery · 9:30 AM', 'Delivery · 10:00 AM', 'Delivery · 10:30 AM', 'Delivery · 11:00 AM', 'Delivery · 11:30 AM', 'Delivery · 12:00 PM', 'Delivery · 12:30 PM', 'Delivery · 1:00 PM', 'Delivery · 1:30 PM', 'Delivery · 2:00 PM', 'Pickup · 2:00 PM', 'Pickup · 2:30 PM', 'Pickup · 3:00 PM', 'Pickup · 3:30 PM', 'Pickup · 4:00 PM', 'Pickup · 4:30 PM', 'Pickup · 5:00 PM', 'Pickup · 5:30 PM', 'Pickup · 6:00 PM', 'Pickup · 6:30 PM', 'Pickup · 7:00 PM'])
-    expect(pickupSlots('2026-10-22', data.windows)).toEqual([])
+  it('creates only complete slots for the exact date and method', () => {
+    expect(pickupSlots('2026-11-17', data.windows).map(slot => slot.time)).toEqual(['12:30','13:00','13:30','14:00']);
+    expect(pickupSlots('2026-11-21', data.windows)).toHaveLength(6);
+    expect(pickupSlots('2026-11-18', data.windows)).toEqual([]);
   })
 
-  it('adds two local calendar days across month and daylight-saving boundaries', () => {
-    expect(earliestPickupDate('America/New_York', new Date('2025-12-31T23:00:00Z'))).toBe('2026-01-02')
-    expect(earliestPickupDate('America/New_York', new Date('2026-03-07T05:30:00Z'))).toBe('2026-03-09')
+  it('adds one local calendar day across month and daylight-saving boundaries', () => {
+    expect(earliestPickupDate('America/New_York', new Date('2025-12-31T23:00:00Z'))).toBe('2026-01-01')
+    expect(earliestPickupDate('America/New_York', new Date('2026-03-07T05:30:00Z'))).toBe('2026-03-08')
   })
 
   it('requires a card message and leaves standard packaging free', () => {
@@ -72,16 +69,16 @@ describe('cookie order helpers', () => {
     expect(selectionErrors(draft({ order_notes: 'x'.repeat(1001) }), data)).toHaveProperty('order_notes')
   })
 
-  it('rejects more than four of a flavor or ten cookies total', () => {
-    expect(selectionErrors(draft({ items: [{ product_id: 'matcha', quantity: 5 }] }), data)).toHaveProperty('order')
-    expect(selectionErrors(draft({ items: [{ product_id: 'matcha', quantity: 6 }, { product_id: 'mango', quantity: 5 }] }), data)).toHaveProperty('order')
+  it('rejects quantities above available stock', () => {
+    expect(selectionErrors(draft({ items: [{ product_id: 'matcha', quantity: 32 }] }), data)).toHaveProperty('order')
+    expect(selectionErrors(draft({ items: [{ product_id: 'matcha', quantity: 32 }, { product_id: 'mango', quantity: 32 }] }), data)).toHaveProperty('order')
   })
 
   it('validates required contact, payment, lead time, and exact pickup slot', () => {
-    const beforeCutoff = new Date('2026-10-20T23:59:00Z')
+    const beforeCutoff = new Date('2026-11-17T04:59:00Z')
     expect(validateDraft(draft(), data, beforeCutoff)).toEqual({})
     const errors = validateDraft(draft({ customer: { first_name: '', last_name: '', phone: '123', email: 'bad', social_handle: '' }, pickup_time: '12:45' }), data, beforeCutoff)
     expect(errors).toMatchObject({ first_name: expect.any(String), last_name: expect.any(String), phone: expect.any(String), email: expect.any(String), pickup_time: expect.any(String) })
-    expect(validateDraft(draft(), data, new Date('2026-10-21T00:00:01Z'))).toHaveProperty('order')
+    expect(validateDraft(draft(), data, new Date('2026-11-17T05:00:01Z'))).toHaveProperty('pickup_date')
   })
 })

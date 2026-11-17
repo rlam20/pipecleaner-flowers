@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useMemo, useState, useTransition, type FormEvent, type ReactNode } from 'react'
 import { ArrowLeft, ArrowRight, CalendarDays, Check, Clock3, CreditCard, Gift, MapPin, PartyPopper } from 'lucide-react'
 import { createCookieOrder } from '@/lib/actions/orders'
-import { FULFILLMENT_DATES, FUNDRAISER_MODE, formatDate, formatTime, money, orderLines, orderTotal, pickupSlots, totalQuantity, validateDraft } from '@/lib/order'
+import { FULFILLMENT_DATES, earliestPickupDate, formatDate, formatTime, money, orderLines, orderTotal, pickupSlots, totalQuantity, validateDraft } from '@/lib/order'
 import type { CreateCookieOrderInput, StorefrontData } from '@/lib/types'
 import { useOrder } from '@/app/components/OrderProvider'
 import OrderSummary from '@/app/components/OrderSummary'
@@ -19,11 +19,15 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [notice, setNotice] = useState('')
   const [isPending, startTransition] = useTransition()
-  const slots = useMemo(() => pickupSlots(draft.pickup_date, data.windows), [draft.pickup_date, data.windows])
+  const [chosenMethod, setMethod] = useState<'pickup' | 'delivery'>('pickup')
+  const method = draft.pickup_window_id ? (draft.pickup_window_id.includes('delivery') ? 'delivery' : 'pickup') : chosenMethod
+  const earliestDate = earliestPickupDate(data.settings.time_zone)
+  const availableDates = FULFILLMENT_DATES.filter(date => date >= earliestDate && data.windows.some(window => window.fulfillment_date === date && window.fulfillment_method === method))
+  const slots = useMemo(() => draft.pickup_date >= earliestDate ? pickupSlots(draft.pickup_date, data.windows.filter(window => window.fulfillment_method === method)) : [], [draft.pickup_date, data.windows, method, earliestDate])
   const selectedWindow = data.windows.find(window => window.id === draft.pickup_window_id)
   const count = totalQuantity(draft.items)
   const lines = orderLines(draft.items, data.products)
-  const total = orderTotal(lines)
+  const total = orderTotal(lines, draft.pickup_window_id.includes('delivery'))
   const paymentRecipient = data.settings.zelle_recipient
 
   const setCustomer = (field: keyof typeof draft.customer, value: string) => {
@@ -62,7 +66,7 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
       }
       if (result.storefront) setData(result.storefront)
       setNotice(result.code === 'changed'
-        ? 'The menu or pickup details changed while you were checking out. We refreshed them below—please review and submit again.'
+        ? `${result.error} We refreshed availability below. Return to your bag to adjust quantities if needed.`
         : result.error)
     })
   }
@@ -83,7 +87,7 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
         <form className="checkout-grid" onSubmit={submit} noValidate>
           <div className="checkout-form-stack">
             <section className="checkout-section panel" aria-labelledby="contact-heading">
-              <SectionHeading number="01" eyebrow="Just the essentials" id="contact-heading">Who&apos;s picking up?</SectionHeading>
+              <SectionHeading number="01" eyebrow="Just the essentials" id="contact-heading">Who is ordering?</SectionHeading>
               <div className="checkout-fields two-columns">
                 <Field label="First name" name="first_name" required error={errors.first_name}><input className="input" id={fieldId('first_name')} autoComplete="given-name" value={draft.customer.first_name} onChange={e => setCustomer('first_name', e.target.value)} aria-invalid={Boolean(errors.first_name)} /></Field>
                 <Field label="Last name" name="last_name" required error={errors.last_name}><input className="input" id={fieldId('last_name')} autoComplete="family-name" value={draft.customer.last_name} onChange={e => setCustomer('last_name', e.target.value)} aria-invalid={Boolean(errors.last_name)} /></Field>
@@ -94,13 +98,14 @@ export default function Checkout({ initialData }: { initialData: StorefrontData 
             </section>
 
             <section className="checkout-section panel" aria-labelledby="pickup-heading">
-              <SectionHeading number="02" eyebrow="Worth the wait" id="pickup-heading">Choose your pickup.</SectionHeading>
-              {!FUNDRAISER_MODE && <p className="section-help">Pickup begins two calendar days from today. Available times change with the day you choose.</p>}
+              <SectionHeading number="02" eyebrow="Worth the wait" id="pickup-heading">Choose pickup or delivery.</SectionHeading>
+              <p className="section-help">Order by the previous calendar day, Eastern time. Choose a 30-minute slot; we will coordinate the exact handoff with you.</p><Field label="Method" name="method" required><select className="input" id={fieldId('method')} value={method} onChange={e => { setMethod(e.target.value as 'pickup' | 'delivery'); dispatch({ type: 'pickup', date: '', time: '', windowId: '' }) }}><option value="pickup">Pickup — free</option><option value="delivery">Delivery — +$1 per order</option></select></Field>
               <div className="checkout-fields two-columns">
-                <Field label="Fulfillment date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><input className="input" id={fieldId('pickup_date')} type="date" min={FULFILLMENT_DATES[0]} max={FULFILLMENT_DATES[FULFILLMENT_DATES.length - 1]} value={draft.pickup_date} aria-invalid={Boolean(errors.pickup_date)} onChange={e => dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' })} /></div></Field>
+                <Field label="Fulfillment date" name="pickup_date" required error={errors.pickup_date}><div className="input-with-icon"><CalendarDays size={17} /><select className="input" id={fieldId('pickup_date')} value={availableDates.includes(draft.pickup_date as typeof FULFILLMENT_DATES[number]) ? draft.pickup_date : ''} aria-invalid={Boolean(errors.pickup_date)} onChange={e => { setMethod(method); dispatch({ type: 'pickup', date: e.target.value, time: '', windowId: '' }) }}><option value="">Choose a date</option>{availableDates.map(date => <option key={date} value={date}>{formatDate(date)}</option>)}</select></div></Field>
                 <Field label="Time and method" name="pickup_time" required error={errors.pickup_time}><div className="input-with-icon"><Clock3 size={17} /><select className="input" id={fieldId('pickup_time')} value={draft.pickup_window_id && draft.pickup_time ? `${draft.pickup_window_id}|${draft.pickup_time}` : ''} aria-invalid={Boolean(errors.pickup_time)} disabled={!draft.pickup_date || !slots.length} onChange={e => { const [windowId, time] = e.target.value.split('|'); dispatch({ type: 'pickup', date: draft.pickup_date, time: time || '', windowId: windowId || '' }) }}><option value="">{!draft.pickup_date ? 'Choose a date first' : slots.length ? 'Choose a time and method' : 'No fulfillment times this day'}</option>{slots.map(slot => <option value={`${slot.window_id}|${slot.time}`} key={`${slot.window_id}-${slot.time}`}>{slot.label}</option>)}</select></div></Field>
               </div>
-              <div className="pickup-location"><MapPin size={17} /><div>{FUNDRAISER_MODE ? <><ul className="fulfillment-schedule"><li><strong>Wednesday 10/21:</strong> Lawn tabling, 12:30–3:00 PM</li><li><strong>Friday 10/23:</strong> Delivery only, 3:30–6:00 PM</li><li><strong>Sunday 10/25:</strong> Delivery, 9:00 AM–2:00 PM; pickup, 2:00–7:00 PM</li></ul><span>Delivery details will be coordinated directly. Preorders close Tuesday 10/20 at 8:00 PM.</span></> : <><strong>{data.settings.pickup_location || 'Pickup location will be confirmed'}</strong><span>We&apos;ll use the contact details above if anything needs coordinating.</span></>}</div></div>
+              {method === 'delivery' && <Field label="Delivery location and details" name="delivery_details" required error={errors.delivery_details}><textarea className="input" id={fieldId('delivery_details')} maxLength={1000} value={draft.delivery_details} onChange={e => dispatch({ type: 'deliveryDetails', details: e.target.value })} aria-invalid={Boolean(errors.delivery_details)} placeholder="Address, building, room, and handoff instructions" /></Field>}
+              <div className="pickup-location"><MapPin size={17} /><div><strong>{data.settings.pickup_location || 'Pickup location will be confirmed directly'}</strong><ul className="fulfillment-schedule"><li>Tuesday 11/17: pickup 12:30–2:30 PM and 5:30–7:30 PM</li><li>Wednesday 11/18 and Friday 11/20: pickup and delivery 5–8:30 PM</li><li>Saturday 11/21: delivery 9 AM–noon; pickup 5–8:30 PM</li></ul><span>All times Eastern. We will contact you to coordinate your selected slot.</span></div></div>
             </section>
 
             <section className="checkout-section panel" aria-labelledby="payment-heading">
@@ -137,5 +142,5 @@ function PaymentOption({ value, selected, label, recipient, onSelect }: { value:
 
 function Confirmation({ receipt, instagramUrl, onRestart }: { receipt: NonNullable<ReturnType<typeof useOrder>['receipt']>; instagramUrl: string | null; onRestart: () => void }) {
   const recipient = receipt.payment_method === 'venmo' ? `@${receipt.payment_recipient.replace(/^@/, '')}` : receipt.payment_recipient
-  return <div className="checkout-page"><SiteHeader checkout /><main id="main-content" className="confirmation page-shell"><div className="confirmation-card panel"><span className="confirmation-icon"><PartyPopper /></span><p className="eyebrow">Order received</p><h1>Your cookie break<br /><em>is on the calendar.</em></h1><p className="confirmation-lede">We saved your order. Send payment with the order number below in the note; payment remains awaiting confirmation.</p><div className="order-number"><span>Order number</span><strong>{receipt.order_number}</strong></div><div className="confirmation-details"><div><CalendarDays /><span>{receipt.fulfillment_method === 'delivery' ? 'Delivery' : 'Pickup'}</span><strong>{formatDate(receipt.pickup_date)}<br />at {formatTime(receipt.pickup_time)}</strong></div><div><MapPin /><span>Location</span><strong>{receipt.pickup_location || 'To be confirmed'}</strong></div><div><CreditCard /><span>{receipt.payment_method === 'venmo' ? 'Venmo' : 'Zelle'}</span><strong>{recipient}<br />{money(receipt.total_cents)}</strong></div></div><div className="payment-callout"><strong>Payment note</strong><span>{receipt.order_number}</span><p>Please include this order number so your payment can be matched. Payment is not yet verified.</p></div><button className="button" type="button" onClick={onRestart}>Start another order <ArrowRight size={17} /></button></div></main><SiteFooter instagramUrl={instagramUrl} /></div>
+  return <div className="checkout-page"><SiteHeader checkout /><main id="main-content" className="confirmation page-shell"><div className="confirmation-card panel"><span className="confirmation-icon"><PartyPopper /></span><p className="eyebrow">Order received</p><h1>Your cookie break<br /><em>is on the calendar.</em></h1><p className="confirmation-lede">We saved your order. Send payment with the order number below in the note; payment remains awaiting confirmation.</p><div className="order-number"><span>Order number</span><strong>{receipt.order_number}</strong></div><div className="confirmation-details"><div><CalendarDays /><span>{receipt.fulfillment_method === 'delivery' ? 'Delivery' : 'Pickup'}</span><strong>{formatDate(receipt.pickup_date)}<br />at {formatTime(receipt.pickup_time)}</strong></div><div><MapPin /><span>Location</span><strong>{receipt.pickup_location || 'To be confirmed'}</strong></div><div><CreditCard /><span>{receipt.payment_method === 'venmo' ? 'Venmo' : 'Zelle'}</span><strong>{recipient}<br />{money(receipt.total_cents)}</strong></div></div><p>Subtotal: {money(receipt.subtotal_cents)} · Cookie deal: −{money(receipt.discount_cents)} · Delivery: {money(receipt.delivery_fee_cents)}</p>{receipt.delivery_details && <p>Delivery details: {receipt.delivery_details}</p>}<p>We will contact you to coordinate your selected slot.</p><div className="payment-callout"><strong>Payment note</strong><span>{receipt.order_number}</span><p>Please include this order number so your payment can be matched. Payment is not yet verified.</p></div><button className="button" type="button" onClick={onRestart}>Start another order <ArrowRight size={17} /></button></div></main><SiteFooter instagramUrl={instagramUrl} /></div>
 }

@@ -2,14 +2,17 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { ArrowRight, ArrowUpRight, Check, Gift, Minus, Plus, Sparkle, X } from 'lucide-react'
 import type { CookieProduct, StorefrontData } from '@/lib/types'
-import { MAX_FLAVOR_QUANTITY, MAX_ORDER_QUANTITY, isOrderingOpen, money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
+import { MAX_ORDER_QUANTITY, isOrderingOpen, money, orderLines, orderTotal, totalQuantity } from '@/lib/order'
 import { useOrder } from './OrderProvider'
 import OrderSummary from './OrderSummary'
 import SiteHeader from './SiteHeader'
 import SiteFooter from './SiteFooter'
+
+const dataStockLabel = (stock: number, available: boolean) => available ? `${stock} available` : 'Availability confirmed at checkout'
 
 function CookieCard({ product, index, available }: { product: CookieProduct; index: number; available: boolean }) {
   const { draft, dispatch, hydrated } = useOrder()
@@ -19,18 +22,18 @@ function CookieCard({ product, index, available }: { product: CookieProduct; ind
   return (
     <article className={`cookie-card${quantity ? ' cookie-selected' : ''}`}>
       <div className={`cookie-photo cookie-photo-${index % 3}`}>
-        <Image src={product.image_url} alt={`${product.name} cookie`} fill sizes="(max-width: 599px) 90vw, (max-width: 899px) 45vw, (max-width: 1199px) 30vw, 24vw" />
+        {product.image_url ? <Image src={product.image_url} style={{ objectPosition: product.id === 'bueno-than-ever' ? 'center 85%' : 'center' }} alt={`${product.name} cookie`} fill sizes="(max-width: 599px) 90vw, (max-width: 899px) 45vw, (max-width: 1199px) 30vw, 24vw" /> : <div className="cookie-text-art"><Sparkle size={42} /><span>{product.name}</span></div>}
         <span className="cookie-number">0{index + 1}</span>
         {quantity > 0 && <span className="selected-label"><Check size={12} aria-hidden="true" /> In your bag</span>}
       </div>
       <div className="cookie-title-row"><h3>{product.name}</h3></div>
-      <p className="cookie-description">{product.description}</p>
+      <p className="cookie-description">{product.description}</p><p>{dataStockLabel(product.stock_quantity, available)}</p>
       <div className="cookie-card-bottom">
         <span className="cookie-price">{available ? money(product.unit_price_cents) : 'Menu preview'}{available && <span> / cookie</span>}</span>
         <div className="quantity-control" role="group" aria-label={`${product.name} quantity`}>
           <button type="button" aria-label={`Remove one ${product.name}`} disabled={!available || !hydrated || quantity === 0} onClick={() => setQuantity(quantity - 1)}><Minus size={15} aria-hidden="true" /></button>
           <output aria-label={`${product.name} in bag`} aria-live="polite">{quantity}</output>
-          <button type="button" aria-label={`Add one ${product.name}`} title={atOrderLimit || quantity >= MAX_FLAVOR_QUANTITY ? 'Limit reached. Need more? DM @doughnotdisturb_jz on Instagram.' : undefined} disabled={!available || !hydrated || atOrderLimit || quantity >= MAX_FLAVOR_QUANTITY} onClick={() => setQuantity(quantity + 1)}><Plus size={15} aria-hidden="true" /></button>
+          <button type="button" aria-label={`Add one ${product.name}`} title={atOrderLimit || quantity >= product.stock_quantity ? 'All available stock is in your bag.' : undefined} disabled={!available || !hydrated || atOrderLimit || quantity >= product.stock_quantity} onClick={() => setQuantity(quantity + 1)}><Plus size={15} aria-hidden="true" /></button>
         </div>
       </div>
     </article>
@@ -38,15 +41,22 @@ function CookieCard({ product, index, available }: { product: CookieProduct; ind
 }
 
 export default function Storefront({ data }: { data: StorefrontData }) {
+  const router = useRouter()
+  useEffect(() => {
+    const refresh = () => router.refresh()
+    const timer = window.setInterval(refresh, 30000)
+    window.addEventListener('focus', refresh)
+    return () => { window.clearInterval(timer); window.removeEventListener('focus', refresh) }
+  }, [router])
   const { draft, dispatch, hydrated } = useOrder()
   const count = totalQuantity(draft.items)
   const [dismissedDealCount, setDismissedDealCount] = useState<number | null>(null)
   const orderingOpen = isOrderingOpen()
   const lines = orderLines(draft.items, data.products)
-  const total = orderTotal(lines)
+  const total = orderTotal(lines, draft.pickup_window_id.includes('delivery'))
   const needsNote = draft.packaging === 'card' && !draft.card_message.trim()
   const canCheckout = hydrated && data.available && orderingOpen && count > 0 && !needsNote
-  const showDealNotice = count > 0 && count < MAX_ORDER_QUANTITY && count % 2 === 0 && dismissedDealCount !== count
+  const showDealNotice = count > 0 && count < MAX_ORDER_QUANTITY && count % 3 !== 0 && dismissedDealCount !== count
 
   return (
     <div className="storefront">
@@ -61,7 +71,7 @@ export default function Storefront({ data }: { data: StorefrontData }) {
             <div className="hero-small-note"><span className="tiny-star">✳</span> A little something worth slowing down for.</div>
           </div>
           <div className="hero-visual">
-            <div className="hero-photo hero-menu"><Image src="/cookies/october-menu-v3.png" alt="DoughNotDisturb October cookie menu" fill priority sizes="(max-width: 759px) 92vw, 49vw" /></div>
+            <div className="hero-photo hero-menu"><Image src="/cookies/menu.png" alt="DoughNotDisturb cookie display featuring Far From the Tree, Miso Happy, Dirty Little Secret, and Black Friday." fill priority sizes="(max-width: 759px) 92vw, 49vw" /></div>
             <div className="hero-seal" aria-hidden="true"><Sparkle size={16} strokeWidth={1.1} /><span>do not<br /><em>disturb.</em></span><small>COOKIE BREAK</small></div>
             <p className="photo-caption"><span>Made for your little moments.</span><span>Enjoy every crumb.</span></p>
           </div>
@@ -74,19 +84,19 @@ export default function Storefront({ data }: { data: StorefrontData }) {
             <div><p className="eyebrow">01 / The cookie counter</p><h2 id="menu-heading">Meet your next<br /><em>little obsession.</em></h2></div>
             <p>One for the moment. A few for later.<br />Mix your favorites and make it yours.</p>
           </div>
-          {(!data.available || !orderingOpen) && <div className="store-notice" role="status"><strong>{orderingOpen ? 'The cookie counter is getting ready.' : 'Preorders are closed.'}</strong><p>{orderingOpen ? 'Take a look around. Online ordering is temporarily unavailable; please check back soon.' : 'Preorders closed Tuesday, October 20 at 8:00 p.m.'}</p></div>}
+          {(!data.available || !orderingOpen) && <div className="store-notice" role="status"><strong>{orderingOpen ? 'The cookie counter is getting ready.' : 'Preorders are closed.'}</strong><p>{orderingOpen ? 'Take a look around. Online ordering is temporarily unavailable; please check back soon.' : 'Ordering for this menu has closed.'}</p></div>}
           <div className="order-layout">
             <div className="order-builder">
               <div className="cookie-grid">
-                {data.products.map((product, index) => <CookieCard product={product} index={index} available={data.available && orderingOpen} key={product.id} />)}
+                {data.products.filter(product => !data.available || product.stock_quantity > 0).map((product, index) => <CookieCard product={product} index={index} available={data.available && orderingOpen} key={product.id} />)}
               </div>
               <div className="quantity-explainer">
                 <p>A little treat or a reason to gather?</p>
                 <ul>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>Every 3 cookies: $1 off.</strong></li>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>Every 5 cookies: $2 off.</strong></li>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>10-cookie order maximum.</strong></li>
-                  <li><Sparkle size={14} aria-hidden="true" /><strong>Reached a limit? DM @doughnotdisturb_jz.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Any 2 cookies: $1 off.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Any 3 cookies: $2 off.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Deals repeat automatically across all flavors.</strong></li>
+                  <li><Sparkle size={14} aria-hidden="true" /><strong>Available while stocks last.</strong></li>
                 </ul>
               </div>
               <fieldset className="packaging-section" disabled={!data.available}>

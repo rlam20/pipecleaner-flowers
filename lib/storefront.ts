@@ -5,26 +5,10 @@ import type { CookieProduct, PickupWindow, StorefrontData, StoreSettings } from 
 
 // Presentation fallback only. Orders require a successfully loaded Supabase catalog.
 const fallbackProducts: CookieProduct[] = [
-  {
-    id: 'spindle-and-spice', name: 'Spindle and Spice',
-    description: 'A soft cinnamon-butter cookie swirled with gooey cinnamon filling, topped with vanilla glaze and a spooky halal marshmallow spiderweb.',
-    image_url: '/cookies/spindle-and-spice.png', unit_price_cents: 300, sort_order: 1, active: true,
-  },
-  {
-    id: 'draculas-kiss', name: 'Dracula’s Kiss',
-    description: 'A rich chocolate cookie with a blood-red raspberry center and chocolate drizzle. Love at first bite.',
-    image_url: '/cookies/draculas-kiss.png', unit_price_cents: 300, sort_order: 2, active: true,
-  },
-  {
-    id: 'coraline-cheesecake', name: 'Coraline Cheesecake',
-    description: 'A dark chocolate cookie with a creamy cheesecake center, ube purple drizzle, and golden stars.',
-    image_url: '/cookies/coraline-cheesecake.png', unit_price_cents: 300, sort_order: 3, active: true,
-  },
-  {
-    id: 'mummys-favorite', name: 'Mummy’s Favorite',
-    description: 'A warm chai-spiced Biscoff cookie loaded with white chocolate chips and wrapped in a mummy-inspired white chocolate drizzle.',
-    image_url: '/cookies/mummys-favorite.png', unit_price_cents: 300, sort_order: 4, active: true,
-  },
+  { id: 'far-from-the-tree', name: 'Far From the Tree', description: 'Red apple cider cookie studded with buttery stroopwafel pieces and topped with a caramel-filled stroopwafel heart.', image_url: '/cookies/far%20from%20the%20tree.png', unit_price_cents: 400, sort_order: 1, active: true, stock_quantity: 0 },
+  { id: 'dirty-little-secret', name: 'Dirty Little Secret', description: 'Warmly spiced chai cookie infused with espresso, packed with white and milk chocolate chips, buttery toffee chunks, and finished with flaky sea salt.', image_url: '/cookies/Dirty%20little%20secret.png', unit_price_cents: 400, sort_order: 2, active: true, stock_quantity: 0 },
+  { id: 'miso-happy', name: 'Miso Happy', description: 'Rich brown butter chocolate chip cookie with savory miso for the perfect balance of sweet, salty, and nutty flavors.', image_url: '/cookies/miso%20butter.png', unit_price_cents: 300, sort_order: 3, active: true, stock_quantity: 0 },
+  { id: 'bueno-than-ever', name: 'Bueno Than Ever', description: 'A decadent cookie cake with fluffy whipped cream, rich Nutella, sweet jam, and cookie dough, topped with a Kinder Bueno and a fresh strawberry.', image_url: '/cookies/bueno_than_ever.png', unit_price_cents: 400, sort_order: 4, active: true, stock_quantity: 0 }
 ]
 
 const fallbackSettings: StoreSettings = {
@@ -53,13 +37,13 @@ export async function getStorefront(): Promise<StorefrontData> {
     const supabase = await createClient()
     const [productResult, settingsResult, windowResult] = await Promise.all([
       supabase.from('cookie_products')
-        .select('id,name,description,image_url,unit_price_cents,sort_order,active')
+        .select('id,name,description,image_url,unit_price_cents,sort_order,active,stock_quantity')
         .eq('active', true).order('sort_order').order('name'),
       supabase.from('cookie_store_settings')
         .select('time_zone,pickup_location,venmo_handle,zelle_recipient,instagram_url')
         .eq('id', true).maybeSingle(),
       supabase.from('cookie_pickup_windows')
-        .select('id,day_of_week,start_time,end_time,slot_minutes,active')
+        .select('id,day_of_week,start_time,end_time,slot_minutes,active,fulfillment_date,fulfillment_method')
         .eq('active', true).order('day_of_week').order('start_time'),
     ])
 
@@ -69,8 +53,8 @@ export async function getStorefront(): Promise<StorefrontData> {
       && Number.isSafeInteger(product.unit_price_cents) && product.unit_price_cents > 0
     ).map((product) => ({
       ...product,
-      description: typeof product.description === 'string' ? product.description : '',
-      image_url: typeof product.image_url === 'string' ? product.image_url : '/cookies/matcha.webp',
+      description: nullableText(product.description) ?? fallbackProducts.find(fallback => fallback.id === product.id)?.description ?? '',
+      image_url: nullableText(product.image_url) ?? fallbackProducts.find(fallback => fallback.id === product.id)?.image_url ?? '',
     }))
 
     const row = settingsResult.data
@@ -95,7 +79,7 @@ export async function getStorefront(): Promise<StorefrontData> {
 
     return {
       products, settings, windows,
-      available: products.length > 0 && windows.length > 0 && Boolean(settings.zelle_recipient),
+      available: products.some(product => product.stock_quantity > 0) && windows.length > 0 && Boolean(settings.zelle_recipient),
     }
   } catch {
     return fallback

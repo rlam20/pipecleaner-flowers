@@ -11,7 +11,7 @@ function record(value: unknown): value is Record<string, unknown> {
 
 function validInputShape(input: unknown): input is CreateCookieOrderInput {
   if (!record(input) || !record(input.customer) || !record(input.expected_pickup)) return false
-  const stringFields = ['request_id', 'packaging', 'card_message', 'order_notes', 'pickup_date', 'pickup_time', 'pickup_window_id', 'payment_method', 'expected_payment_recipient']
+  const stringFields = ['request_id', 'packaging', 'card_message', 'order_notes', 'delivery_details', 'pickup_date', 'pickup_time', 'pickup_window_id', 'payment_method', 'expected_payment_recipient']
   if (!stringFields.every((key) => typeof input[key] === 'string')) return false
   const customer = input.customer
   if (!['first_name', 'last_name', 'phone', 'email', 'social_handle'].every((key) => typeof customer[key] === 'string')) return false
@@ -28,7 +28,7 @@ function validInputShape(input: unknown): input is CreateCookieOrderInput {
 
 function validReceipt(value: unknown): value is OrderReceipt {
   if (!record(value) || !Array.isArray(value.items) || value.items.length === 0) return false
-  const stringFields = ['order_number', 'order_date', 'card_message', 'order_notes', 'pickup_date', 'pickup_time', 'time_zone', 'payment_recipient']
+  const stringFields = ['order_number', 'order_date', 'card_message', 'order_notes', 'delivery_details', 'pickup_date', 'pickup_time', 'time_zone', 'payment_recipient']
   return stringFields.every((key) => typeof value[key] === 'string')
     && (value.order_type === 'snack' || value.order_type === 'party')
     && (value.packaging === 'standard' || value.packaging === 'card')
@@ -37,6 +37,9 @@ function validReceipt(value: unknown): value is OrderReceipt {
     && (value.pickup_location === null || typeof value.pickup_location === 'string')
     && value.status === 'awaiting_payment'
     && Number.isSafeInteger(value.total_cents)
+    && Number.isSafeInteger(value.subtotal_cents)
+    && Number.isSafeInteger(value.discount_cents)
+    && Number.isSafeInteger(value.delivery_fee_cents)
     && value.items.every((item) => record(item)
       && typeof item.product_id === 'string' && typeof item.name === 'string'
       && Number.isSafeInteger(item.quantity) && Number.isSafeInteger(item.unit_price_cents)
@@ -56,6 +59,7 @@ export async function createCookieOrder(input: CreateCookieOrderInput): Promise<
     packaging: input.packaging,
     card_message: input.card_message,
     order_notes: input.order_notes,
+    delivery_details: input.delivery_details,
     customer: {
       first_name: input.customer.first_name, last_name: input.customer.last_name,
       phone: input.customer.phone, email: input.customer.email, social_handle: input.customer.social_handle,

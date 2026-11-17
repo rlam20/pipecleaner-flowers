@@ -1,20 +1,19 @@
 import type { CookieProduct, OrderDraft, OrderItemInput, OrderLine, PickupSlot, PickupWindow, StorefrontData } from './types'
 
-export const FULFILLMENT_DATES = ['2026-10-21', '2026-10-23', '2026-10-25'] as const
+export const FULFILLMENT_DATES = ['2026-11-17', '2026-11-18', '2026-11-20', '2026-11-21'] as const
 export const CURRENT_PICKUP_DATE = FULFILLMENT_DATES[0]
-export const ORDER_CUTOFF = new Date('2026-10-21T00:00:00Z')
-export const FUNDRAISER_MODE = true
-export const MAX_ORDER_QUANTITY = 10
-export const MAX_FLAVOR_QUANTITY = 4
+export const ORDER_CUTOFF = new Date('2026-11-21T05:00:00Z')
+export const MAX_ORDER_QUANTITY = 2147483647
+export const MAX_FLAVOR_QUANTITY = 2147483647
 
 export const money = (cents: number) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(cents / 100)
-export const isOrderingOpen = (now = new Date()) => now.getTime() <= ORDER_CUTOFF.getTime()
+export const isOrderingOpen = (now = new Date()) => now.getTime() < ORDER_CUTOFF.getTime()
 export const totalQuantity = (items: OrderItemInput[]) => items.reduce((sum, item) => sum + item.quantity, 0)
-export function orderTotal(lines: OrderLine[]): number {
+export function orderTotal(lines: OrderLine[], delivery = false): number {
   const quantity = totalQuantity(lines)
   const subtotal = lines.reduce((sum, line) => sum + line.line_total_cents, 0)
-  const discount = Math.floor(quantity / 5) * 200 + Math.floor((quantity % 5) / 3) * 100
-  return subtotal - discount
+  const discount = Math.floor(quantity / 3) * 200 + Math.floor((quantity % 3) / 2) * 100
+  return subtotal - discount + (delivery && quantity > 0 ? 100 : 0)
 }
 export const orderCategory = (quantity: number): 'snack' | 'party' => quantity >= 7 ? 'party' : 'snack'
 export const categoryLabel = (category: 'snack' | 'party') => category === 'party' ? 'Party Pack' : 'Snack Pick Up'
@@ -40,7 +39,7 @@ export function validDate(value: string): boolean {
 
 export function earliestPickupDate(timeZone: string, now = new Date()): string {
   const date = new Date(`${businessDate(timeZone, now)}T12:00:00Z`)
-  date.setUTCDate(date.getUTCDate() + 2)
+  date.setUTCDate(date.getUTCDate() + 1)
   return date.toISOString().slice(0, 10)
 }
 
@@ -57,12 +56,12 @@ export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[]
   if (!validDate(date) || !FULFILLMENT_DATES.includes(date as typeof FULFILLMENT_DATES[number])) return []
   const weekday = new Date(`${date}T12:00:00Z`).getUTCDay()
   const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5))
-  return windows.filter(window => window.active && window.day_of_week === weekday).flatMap(window => {
+  return windows.filter(window => window.active && window.day_of_week === weekday && window.fulfillment_date === date).flatMap(window => {
     const slots: PickupSlot[] = []
     if (!Number.isInteger(window.slot_minutes) || window.slot_minutes <= 0) return slots
     for (let current = minutes(window.start_time); current + window.slot_minutes <= minutes(window.end_time); current += window.slot_minutes) {
       const time = `${String(Math.floor(current / 60)).padStart(2, '0')}:${String(current % 60).padStart(2, '0')}`
-      const method = window.id.includes('delivery') ? 'Delivery' : window.id.includes('lawn-tabling') ? 'Lawn tabling' : 'Pickup'
+      const method = window.fulfillment_method === 'delivery' ? 'Delivery (+$1)' : 'Pickup'
       slots.push({ window_id: window.id, time, label: `${method} · ${formatTime(time)}` })
     }
     return slots
@@ -71,7 +70,7 @@ export function pickupSlots(date: string, windows: PickupWindow[]): PickupSlot[]
 
 export function emptyDraft(): OrderDraft {
   return {
-    items: [], packaging: 'standard', card_message: '', order_notes: '',
+    items: [], packaging: 'standard', card_message: '', order_notes: '', delivery_details: '',
     customer: { first_name: '', last_name: '', phone: '', email: '', social_handle: '' },
     pickup_date: CURRENT_PICKUP_DATE, pickup_time: '', pickup_window_id: '', payment_method: 'zelle', request_id: '',
   }
@@ -80,11 +79,11 @@ export function emptyDraft(): OrderDraft {
 export function selectionErrors(draft: OrderDraft, data: StorefrontData, now = new Date()): Record<string, string> {
   const errors: Record<string, string> = {}
   if (!data.available) errors.order = 'Ordering is not available just yet. Please check back soon.'
-  if (!isOrderingOpen(now)) errors.order = 'Preorders closed Tuesday, October 20 at 8:00 PM.'
+  if (!isOrderingOpen(now)) errors.order = 'Ordering for this menu has closed.'
   if (!draft.items.length) errors.order = 'Choose at least one cookie to get started.'
   if (totalQuantity(draft.items) > MAX_ORDER_QUANTITY) errors.order = `Orders are limited to ${MAX_ORDER_QUANTITY} cookies. Need more? DM @doughnotdisturb_jz on Instagram.`
-  if (draft.items.some(item => !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > MAX_FLAVOR_QUANTITY || !data.products.some(product => product.id === item.product_id && product.active))) {
-    errors.order = `Each flavor is limited to ${MAX_FLAVOR_QUANTITY} cookies. Need more? DM @doughnotdisturb_jz on Instagram.`
+  if (draft.items.some(item => !Number.isSafeInteger(item.quantity) || item.quantity < 1 || item.quantity > MAX_FLAVOR_QUANTITY || !data.products.some(product => product.id === item.product_id && product.active && product.stock_quantity >= item.quantity))) {
+    errors.order = 'Stock changed. Please reduce quantities or remove unavailable cookies.'
   }
   if (new Set(draft.items.map(item => item.product_id)).size !== draft.items.length) errors.order = 'Please review your cookie quantities.'
   const total = orderTotal(orderLines(draft.items, data.products))
@@ -107,6 +106,8 @@ export function validateDraft(draft: OrderDraft, data: StorefrontData, now = new
   if (draft.customer.social_handle.trim().length > 100) errors.social_handle = 'Keep your social handle under 100 characters.'
   if (!validDate(draft.pickup_date) || !FULFILLMENT_DATES.includes(draft.pickup_date as typeof FULFILLMENT_DATES[number])) errors.pickup_date = 'Choose an available fulfillment date.'
   if (!pickupSlots(draft.pickup_date, data.windows).some(slot => slot.window_id === draft.pickup_window_id && slot.time === draft.pickup_time)) errors.pickup_time = 'Choose an available pickup time.'
+  if (draft.pickup_date < earliestPickupDate(data.settings.time_zone, now)) errors.pickup_date = 'Order at least one calendar day in advance.'
+  if (draft.pickup_window_id.includes('delivery') && (!draft.delivery_details.trim() || draft.delivery_details.length > 1000)) errors.delivery_details = 'Enter delivery location and details (up to 1,000 characters).'
   const recipient = draft.payment_method === 'venmo' ? data.settings.venmo_handle : draft.payment_method === 'zelle' ? data.settings.zelle_recipient : null
   if (!recipient) errors.payment_method = 'Please choose an available payment method.'
   return errors

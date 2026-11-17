@@ -11,11 +11,14 @@ export default function OrderSummary({ products, compact = false, children }: { 
   const lines = orderLines(draft.items, products)
   const count = totalQuantity(draft.items)
   const subtotal = lines.reduce((sum, line) => sum + line.line_total_cents, 0)
-  const total = orderTotal(lines)
+  const discounted = orderTotal(lines)
+  const deliveryFee = draft.pickup_window_id.includes('delivery') && count > 0 ? 100 : 0
+  const total = discounted + deliveryFee
 
   return (
     <section className={`order-summary panel${compact ? ' summary-compact' : ''}`} aria-label="Order summary">
       <div className="summary-heading"><h3>Your little box of joy</h3><span className="summary-count">{count}</span></div>
+      {draft.items.filter(item => !products.some(product => product.id === item.product_id && product.active)).map(item => <p key={item.product_id}>A cookie in your bag is no longer available. <button type="button" className="text-button" onClick={() => dispatch({ type: 'quantity', productId: item.product_id, quantity: 0 })}>Remove unavailable cookie</button></p>)}
       {lines.length === 0 ? (
         <div className="empty-bag">
           <span className="empty-bag-icon"><Cookie size={35} strokeWidth={1.1} aria-hidden="true" /></span>
@@ -33,7 +36,9 @@ export default function OrderSummary({ products, compact = false, children }: { 
             ))}
           </ul>
           <div className="summary-packaging"><span><Gift size={16} strokeWidth={1.4} aria-hidden="true" />{draft.packaging === 'card' ? 'Card with Note' : 'Standard packaging'}</span><span>Included</span></div>
-          {total < subtotal && <div className="summary-packaging"><span>Cookie deal</span><span>−{money(subtotal - total)}</span></div>}
+          <div className="summary-packaging"><span>Subtotal</span><span>{money(subtotal)}</span></div>
+          {deliveryFee > 0 && <div className="summary-packaging"><span>Delivery</span><span>{money(deliveryFee)}</span></div>}
+          {discounted < subtotal && <div className="summary-packaging"><span>Cookie deal</span><span>−{money(subtotal - discounted)}</span></div>}
           {draft.packaging === 'card' && draft.card_message.trim() && <p className="summary-note">“{draft.card_message}”</p>}
         </>
       )}

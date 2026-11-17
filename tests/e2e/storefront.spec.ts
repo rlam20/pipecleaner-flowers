@@ -4,10 +4,10 @@ test('renders the complete storefront without horizontal overflow', async ({ pag
   await page.goto('/')
   await expect(page).toHaveTitle(/DoughNotDisturb/)
   await expect(page.getByRole('heading', { name: /A little pause/i })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Spindle and Spice' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Dracula’s Kiss' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Coraline Cheesecake' })).toBeVisible()
-  await expect(page.getByRole('heading', { name: 'Mummy’s Favorite' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Far From the Tree' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Dirty Little Secret' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Miso Happy' })).toBeVisible()
+  await expect(page.getByRole('heading', { name: 'Bueno Than Ever' })).toBeVisible()
   await expect(page.locator('body')).toContainText('The cookie counter is getting ready')
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth)).toBe(true)
 })
@@ -18,7 +18,7 @@ test('restores private checkout details from this tab without putting them in th
       version: 3,
       receipt: null,
       draft: {
-        items: [{ product_id: 'spindle-and-spice', quantity: 2 }],
+        items: [{ product_id: 'far-from-the-tree', quantity: 2 }],
         packaging: 'card', card_message: 'A well-earned treat.', order_notes: '',
         customer: { first_name: 'Test', last_name: 'Customer', phone: '(555) 123-4567', email: 'test@example.com', social_handle: '@test' },
         pickup_date: '', pickup_time: '', pickup_window_id: '', payment_method: 'venmo',
@@ -30,7 +30,7 @@ test('restores private checkout details from this tab without putting them in th
   await expect(page.getByRole('heading', { name: /cookie break official/i })).toBeVisible()
   await expect(page.getByLabel('First name')).toHaveValue('Test')
   await expect(page.getByLabel('Phone')).toHaveValue('(555) 123-4567')
-  await expect(page.getByText(/Spindle and Spice.*2/)).toBeVisible()
+  await expect(page.getByText(/Far From the Tree.*2/)).toBeVisible()
   expect(page.url()).toBe('http://127.0.0.1:3000/checkout')
 })
 

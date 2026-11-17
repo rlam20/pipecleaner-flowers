@@ -5,6 +5,7 @@ export type CookieProduct = {
   image_url: string
   unit_price_cents: number
   sort_order: number
+  stock_quantity: number
   active: boolean
 }
 export type StoreSettings = {
@@ -15,6 +16,8 @@ export type StoreSettings = {
   instagram_url: string | null
 }
 export type PickupWindow = {
+  fulfillment_date: string
+  fulfillment_method: 'pickup' | 'delivery'
   id: string
   day_of_week: number
   start_time: string
@@ -43,6 +46,7 @@ export type OrderDraft = {
   items: OrderItemInput[]
   packaging: Packaging
   card_message: string
+  delivery_details: string
   order_notes: string
   customer: CustomerDetails
   pickup_date: string
@@ -65,7 +69,11 @@ export type OrderReceipt = {
   order_type: 'snack' | 'party'
   packaging: Packaging
   card_message: string
+  delivery_details: string
   order_notes: string
+  subtotal_cents: number
+  discount_cents: number
+  delivery_fee_cents: number
   total_cents: number
   pickup_date: string
   pickup_time: string

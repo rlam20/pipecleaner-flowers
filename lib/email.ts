@@ -28,7 +28,7 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
     `${item.quantity} × ${item.name} — ${currency(item.unit_price_cents)} each — ${currency(item.line_total_cents)}`
   )
   const pickup = `${receipt.fulfillment_method === 'delivery' ? 'Delivery' : 'Pickup'}: ${receipt.pickup_date} at ${receipt.pickup_time} (${receipt.time_zone})`
-  const location = receipt.pickup_location || 'Pickup location will be confirmed directly.'
+  const location = receipt.fulfillment_method === 'delivery' ? receipt.delivery_details : receipt.pickup_location || 'Pickup location will be confirmed directly.'
   const payment = `${receipt.payment_method === 'venmo' ? 'Venmo' : 'Zelle'}: ${receipt.payment_recipient}`
   const text = [
     `DoughNotDisturb order ${receipt.order_number}`,
@@ -37,7 +37,7 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
     `Packaging: ${receipt.packaging === 'card' ? 'Card with Note (no charge)' : 'Standard'}`,
     receipt.card_message ? `Card message: ${receipt.card_message}` : '',
     receipt.order_notes ? `Order notes: ${receipt.order_notes}` : '',
-    `Total: ${currency(receipt.total_cents)}`, `Pickup: ${pickup}`, location,
+    `Subtotal: ${currency(receipt.subtotal_cents)}`, `Cookie deal: -${currency(receipt.discount_cents)}`, `Delivery fee: ${currency(receipt.delivery_fee_cents)}`, `Total: ${currency(receipt.total_cents)}`, pickup, location,
     `Payment: ${payment}`, 'Status: Awaiting payment. Payment has not been verified.',
   ].filter((line) => line !== '').join('\n')
 
@@ -50,8 +50,8 @@ export async function sendCookieOrderNotification(receipt: OrderReceipt, custome
     <p>Packaging: ${receipt.packaging === 'card' ? 'Card with Note (no charge)' : 'Standard'}</p>
     ${receipt.card_message ? `<p><strong>Card message:</strong><br>${escapeHtml(receipt.card_message).replace(/\n/g, '<br>')}</p>` : ''}
     ${receipt.order_notes ? `<p><strong>Order notes:</strong><br>${escapeHtml(receipt.order_notes).replace(/\n/g, '<br>')}</p>` : ''}
-    <p><strong>Total: ${currency(receipt.total_cents)}</strong></p>
-    <h3>Pickup</h3><p>${escapeHtml(pickup)}<br>${escapeHtml(location)}</p>
+    <p>Subtotal: ${currency(receipt.subtotal_cents)}<br>Cookie deal: −${currency(receipt.discount_cents)}<br>Delivery fee: ${currency(receipt.delivery_fee_cents)}</p><p><strong>Total: ${currency(receipt.total_cents)}</strong></p>
+    <h3>Fulfillment</h3><p>${escapeHtml(pickup)}<br>${escapeHtml(location)}</p>
     <h3>Payment</h3><p>${escapeHtml(payment)}<br><strong>Awaiting payment</strong> — payment has not been verified.</p>
     </body></html>`
 

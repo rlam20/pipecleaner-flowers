@@ -5,8 +5,8 @@ A two-page cookie ordering storefront built with Next.js, TypeScript, Tailwind C
 ## Local setup
 
 1. Install packages with `npm install`.
-2. Apply the SQL files in `supabase/migrations` in filename order using the Supabase SQL editor.
-3. Apply `supabase/seed.sql` once to add the sample products, placeholder prices, Zelle recipient, and sample pickup hours.
+2. Apply the first SQL migration, then `supabase/seed.sql` to initialize store settings.
+3. Apply the remaining SQL files in `supabase/migrations` in filename order using the Supabase SQL editor. Later migrations replace the sample menu and availability.
 4. Configure the environment variables below and run `npm run dev`.
 
 ```text
@@ -20,7 +20,7 @@ NEXT_PUBLIC_GOOGLE_MAPS_API_KEY=
 
 Next.js loads these values from `.env.local` during local development. The Supabase publishable/default key is preferred; the anon key remains a backward-compatible fallback. Keep `.env.local` private and configure the same variables in the hosting provider for production.
 
-`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is retained for compatibility with the previous application but is not used by the current pickup-only storefront. The redesign does not load Google Maps or expose delivery/address controls.
+`NEXT_PUBLIC_GOOGLE_MAPS_API_KEY` is retained for compatibility but is not used. Delivery location and handoff details are collected as text.
 
 The migration is additive: it does not delete or alter the previous flower tables or historical orders. Public clients may read the active cookie catalog and pickup configuration, but they cannot read or write cookie orders directly. The `submit_cookie_order` database function validates and prices each order before saving it.
 
@@ -28,12 +28,22 @@ The migration is additive: it does not delete or alter the previous flower table
 
 Use the Supabase table editor:
 
-- `cookie_products`: product names, descriptions, active status, image paths, sort order, and prices in integer cents. The seeded `$4.00` prices are placeholders.
+- `cookie_products`: product names, descriptions, active status, image paths, sort order, prices in integer cents, and remaining `stock_quantity`.
 - `cookie_store_settings`: time zone, pickup location, Zelle recipient, and optional Instagram URL. Zelle is configured as `757-333-2559`.
-- `cookie_pickup_windows`: recurring hours by weekday (`0` Sunday through `6` Saturday), start/end times, and slot duration. Seeded hours are sample settings.
+- `cookie_pickup_windows`: exact `fulfillment_date`, `fulfillment_method`, weekday, start/end times, and slot duration.
 - `cookie_orders`: saved orders and their status. Prices, pickup details, and payment recipient are snapshotted at submission time.
 
-The seed uses `on conflict do nothing`, so running it again will not overwrite later edits. Pickup dates require at least two calendar days of lead time in the configured business time zone. The end of a pickup window is exclusive.
+Orders require one calendar day of advance notice in America/New_York: order by 11:59 PM the previous day. Each selected 30-minute slot must fit entirely within its window. Customers are told the exact handoff will be coordinated directly.
+
+## November 2026 release
+
+Apply `supabase/migrations/202611160001_november_stock_and_fulfillment.sql` once to the existing database before deploying this app version. It initializes Far From the Tree (2 × $4), Dirty Little Secret (6 × $4), Miso Happy (31 × $3), and Bueno Than Ever (27 × $4), and the November 17, 18, 20, and 21 schedule. Do not reset stock by replaying this migration after sales begin. No production database changes are performed by building the app.
+
+Deals repeat: each group of three earns $2 off, and a remaining pair earns $1 off. Delivery adds $1 per order after discounts. Prices and fees are calculated by the database and snapshotted in receipts.
+
+Submitting an order reserves inventory even while awaiting payment. Database row locks prevent overselling; retries reuse the existing order without another deduction. In the privileged Supabase table editor, changing an order's status to `cancelled` restores its reserved stock exactly once. Cancelled orders cannot be reopened; place a new order instead. Do not delete orders to cancel them. There is no automatic unpaid-order expiry.
+
+The November menu uses text artwork until appropriate flavor images are supplied; add descriptions and image URLs to the product records when available.
 
 ## Images and design
 
